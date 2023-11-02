@@ -4,8 +4,8 @@
 <div class="">
     <h1 class="mt-6 text-4xl font-bold text-center">Poznámky</h1>
 </div>
-<div class="flex items-start justify-center w-full mx-12 my-6">
-    <div class="box-border w-3/4 p-4 transition-all shadow-md min-h-24 rounded-xl bg-white/5 ">
+<div class="flex flex-col items-center justify-start w-full gap-6 mx-12 my-6" id="noteContainer">
+    <div class="box-border w-1/2 p-4 transition-all shadow-md min-h-24 rounded-xl bg-white/5 ">
         <h1 class="mb-2 text-xl font-bold">Poznamka</h1>
         <img src="/content/avatar/259599177095315456" class="inline-block w-8 mt-0 mr-2 rounded-full">
         cyms
@@ -19,6 +19,17 @@
         <div class="h-auto mt-6 mb-2">
             <a class="box-content px-3 py-2 transition-all border border-white rounded-md select-none hover:bg-white/10">Editovat</a>
             <a class="box-content px-3 py-2 border border-white rounded-md select-none hover:bg-white/10">Smazat</a>
+        </div>
+    </div>
+    <div class="box-border w-1/2 p-4 transition-all shadow-md min-h-24 rounded-xl bg-white/5">
+        <input type="text" class="mb-2 text-xl font-bold bg-transparent border-b outline-none focus-visible:border-dotted" placeholder="Poznamka">
+        <div>
+        <img src="/content/avatar/259599177095315456" class="inline-block w-8 mt-0 mr-2 rounded-full">
+        cyms
+        </div>
+        <textarea name="note-text" id="note-text" class="w-full p-2 my-2 transition-all rounded-lg shadow-inner outline-none resize-none bg-white/10" rows="10"></textarea>
+        <div class="h-auto mt-2 mb-2">
+            <a class="box-content px-3 py-2 transition-all border border-white rounded-md select-none hover:bg-white/10">Uložit</a>
         </div>
     </div>
 </div>
