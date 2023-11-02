@@ -1,0 +1,25 @@
+{% extends "base.j2" %}
+
+{% block content %}
+<div class="">
+    <h1 class="mt-6 text-4xl font-bold text-center">Poznámky</h1>
+</div>
+<div class="flex items-start justify-center w-full mx-12 my-6">
+    <div class="box-border w-3/4 p-4 transition-all shadow-md min-h-24 rounded-xl bg-white/5 ">
+        <h1 class="mb-2 text-xl font-bold">Poznamka</h1>
+        <img src="/content/avatar/259599177095315456" class="inline-block w-8 mt-0 mr-2 rounded-full">
+        cyms
+        <p class="h-auto mt-4 ml-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum gravida venenatis risus, id scelerisque nisi tristique vel. Nunc sit amet pellentesque urna. Sed quis imperdiet ipsum. Sed ultricies ex sem, ut viverra orci mollis id. Donec purus sapien, maximus nec erat id, porta scelerisque felis. Fusce congue neque at quam aliquam egestas. Mauris gravida est quis felis consequat varius non vitae quam. Vivamus vel sem non nunc sagittis feugiat.
+        <ul class="px-8 my-1 list-disc">
+            <li>Položka 1</li>
+            <li>Položka 2</li>
+            <li>Položka 3</li>
+        </ul>
+        </p>
+        <div class="h-auto mt-6 mb-2">
+            <a class="box-content px-3 py-2 transition-all border border-white rounded-md select-none hover:bg-white/10">Editovat</a>
+            <a class="box-content px-3 py-2 border border-white rounded-md select-none hover:bg-white/10">Smazat</a>
+        </div>
+    </div>
+</div>
+{% endblock content %}
