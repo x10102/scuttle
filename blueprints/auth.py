@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from forms import LoginForm, PasswordChangeForm
 from flask_login import login_user, login_required, logout_user
 from passwords import pw_hash
-from logging import info
+from logging import info, warning
 
 # TODO: Move templates
 UserAuth = Blueprint('UserAuth', __name__)
@@ -22,12 +22,14 @@ def login():
 
     uid = dbs.verify_login(form.username.data, form.password.data)
     if not uid:
+        warning(f'Failed login attempt as "{form.username.data}" from {request.remote_addr}')
         flash('Nesprávné uživatelské jméno nebo heslo')
         return redirect(url_for('UserAuth.login'))
     u = dbs.get_user(uid)
     if u.temp_pw:
         session['PRE_LOGIN_UID'] = uid
         return redirect(url_for('UserAuth.pw_change'))
+    info(f'User {u.nickname} (ID: {u.uid}) successfully logged in from {request.remote_addr}')
     login_user(dbs.get_user(uid))
     return redirect(url_for('index'))
 
