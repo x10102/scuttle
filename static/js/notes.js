@@ -1,5 +1,6 @@
-const addBtn = document.getElementById('addNote');
-const noteContainer = document.getElementById('noteContainer');
+const addBtn = document.getElementById('addNote')
+const noteContainer = document.getElementById('noteContainer')
+const token = document.currentScript.getAttribute('token')
 
 const note = `
 <div class="box-border w-1/2 p-4 transition-all shadow-md min-h-24 rounded-xl bg-white/5">
@@ -16,3 +17,18 @@ const note = `
 `
 
 addBtn.addEventListener('click', () => {noteContainer.innerHTML += note});
+
+function deletenote(nid) {
+    let xhr = new XMLHttpRequest()
+    let target = '/notes/delete'
+    let data = `csrf=${token}&deleteid=${nid}`
+    xhr.open('POST', target, true)
+    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
+    console.log('Sending XHR to delete '+nid)
+    xhr.onreadystatechange = () => {
+        console.log(xhr.statusText)
+        const note = document.querySelector(`#note-${nid}`)
+        note.remove()
+    }
+    xhr.send(data);
+}

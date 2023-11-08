@@ -5,32 +5,31 @@
     <h1 class="mt-6 text-4xl font-bold text-center">Poznámky</h1>
 </div>
 <div class="flex flex-col items-center justify-start w-full gap-6 mx-12 my-6" id="noteContainer">
-    <div class="box-border w-1/2 p-4 transition-all shadow-md min-h-24 rounded-xl bg-white/5 ">
-        <h1 class="mb-2 text-xl font-bold">Poznamka</h1>
-        <img src="/content/avatar/259599177095315456" class="inline-block w-8 mt-0 mr-2 rounded-full">
-        cyms
-        <p class="h-auto mt-4 ml-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum gravida venenatis risus, id scelerisque nisi tristique vel. Nunc sit amet pellentesque urna. Sed quis imperdiet ipsum. Sed ultricies ex sem, ut viverra orci mollis id. Donec purus sapien, maximus nec erat id, porta scelerisque felis. Fusce congue neque at quam aliquam egestas. Mauris gravida est quis felis consequat varius non vitae quam. Vivamus vel sem non nunc sagittis feugiat.
-        <ul class="px-8 my-1 list-disc">
-            <li>Položka 1</li>
-            <li>Položka 2</li>
-            <li>Položka 3</li>
-        </ul>
+    {% for note in notes %}
+    <div class="min-h-24 rounded-xl bg-white/5 box-border w-1/2 p-4 transition-all shadow-md" id="note-{{note.nid}}">
+        <h1 class="mb-2 text-xl font-bold">{{ note.title }}</h1>
+        <img src="{{ url_for('UserContent.get_avatar', uid=(note.author_profile or 0)) }}" class="inline-block w-8 mt-0 mr-2 rounded-full">
+        {{ note.author_name }}
+        <p class="h-auto mt-4 ml-2">
+        {{ note.note | replace('\r\n', '<br>') }}
         </p>
         <div class="h-auto mt-6 mb-2">
-            <a class="box-content px-3 py-2 transition-all border border-white rounded-md select-none hover:bg-white/10">Editovat</a>
-            <a class="box-content px-3 py-2 border border-white rounded-md select-none hover:bg-white/10">Smazat</a>
+            <a class="hover:bg-white/10 box-content px-3 py-2 transition-all border border-white rounded-md select-none">Editovat</a>
+            <a class="hover:bg-white/10 box-content px-3 py-2 border border-white rounded-md select-none" onclick="deletenote({{note.nid}})">Smazat</a>
         </div>
     </div>
-    <div class="box-border w-1/2 p-4 transition-all shadow-md min-h-24 rounded-xl bg-white/5">
-        <input type="text" class="mb-2 text-xl font-bold bg-transparent border-b outline-none focus-visible:border-dotted" placeholder="Poznamka">
-        <div>
-        <img src="/content/avatar/259599177095315456" class="inline-block w-8 mt-0 mr-2 rounded-full">
-        cyms
-        </div>
-        <textarea name="note-text" id="note-text" class="w-full p-2 my-2 transition-all rounded-lg shadow-inner outline-none resize-none bg-white/10" rows="10"></textarea>
+    {% endfor %}
+    <div class="min-h-24 rounded-xl bg-white/5 box-border w-1/2 p-4 transition-all shadow-md">
+        <form action="{{url_for('NoteController.add_note')}}" method="post">
+        {{ form.hidden_tag() }}
+        {{ form.title(class="focus-visible:border-dotted mb-2 text-xl font-bold bg-transparent border-b outline-none", placeholder="Poznamka") }}
+        {{ form.note(class="bg-white/10 w-full p-2 my-2 whitespace-pre-wrap transition-all rounded-lg shadow-inner outline-none resize-none", rows=10 )}}
         <div class="h-auto mt-2 mb-2">
-            <a class="box-content px-3 py-2 transition-all border border-white rounded-md select-none hover:bg-white/10">Uložit</a>
+            {{ form.submit(class="hover:bg-white/10 box-content px-3 py-2 transition-all border border-white rounded-md select-none")}}
         </div>
+        </form>
     </div>
 </div>
+
+<script src="{{url_for('static', filename='js/notes.js')}}" token="{{js_token}}"></script>
 {% endblock content %}

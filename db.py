@@ -139,6 +139,10 @@ class Database():
         query = "DELETE FROM Translation WHERE id=?"
         self.__tryexec(query, (aid, ))
 
+    def delete_note(self, nid: int) -> None:
+        query = "DELETE FROM Note WHERE id=?"
+        self.__tryexec(query, (nid,))
+
     def users(self):
         query = "SELECT * FROM User"
         rows = self.__tryexec(query).fetchall()
@@ -182,10 +186,7 @@ class Database():
     def translation_exists(self, name: str):
         query = "SELECT * FROM Translation WHERE name=? COLLATE NOCASE"
         cur = self.__tryexec(query, (name.lower(),))
-        if len(cur.fetchall()) != 0:
-            return True
-        else:
-            return False
+        return len(cur.fetchall()) != 0
 
     def get_translations_by_user(self, uid: int):
         query = "SELECT * FROM Translation WHERE idauthor=? ORDER BY added DESC, id DESC"
@@ -214,3 +215,12 @@ class Database():
             tpw = None
             password = u.password
         return (self.__tryexec(query, (u.nickname, u.wikidot, password, u.discord, u.exempt)).lastrowid, tpw)
+    
+    def add_note(self, n: Note, author_id: int):
+        query = "INSERT INTO Note (title, content, idauthor) VALUES (?, ?, ?)"
+        data = (n.title, n.note, author_id)
+        self.__tryexec(query, data)
+
+    def get_notes(self):
+        query = "SELECT n.id, n.title, n.content, u.nickname, u.discord FROM Note AS n LEFT JOIN User AS u ON n.idauthor = u.id"
+        return [Note(*row) for row in self.__tryexec(query, ()).fetchall()]

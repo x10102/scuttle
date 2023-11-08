@@ -2,7 +2,9 @@ from typing import Any
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, BooleanField, ValidationError
 from wtforms.validators import EqualTo, Length, DataRequired, url
+from wtforms.widgets import TextArea
 
+# Discord ID validator
 class DiscordID():
     def __call__(self, form, field) -> Any:
         if len(field.data) not in [18, 19]:
@@ -51,3 +53,8 @@ class PasswordChangeForm(FlaskForm):
     pw = PasswordField('Heslo', validators=[DataRequired()])
     pw_confirm = PasswordField('Potvrzení hesla', validators=[DataRequired(), EqualTo('pw', message="Hesla se musí shodovat")])
     submit = SubmitField('Potvrdit')
+
+class NewNoteForm(FlaskForm):
+    title = StringField('Název')
+    note = StringField('Poznámka', widget=TextArea())
+    submit = SubmitField('Uložit')

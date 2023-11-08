@@ -14,7 +14,9 @@ from flask_apscheduler import APScheduler
 # Initialize logger before importing internal modules
 logging.basicConfig(filename='translatordb.log', filemode='a', format='[%(asctime)s] %(levelname)s: %(message)s', encoding='utf-8')
 logging.getLogger().setLevel(logging.INFO)
-logging.getLogger().addHandler(logging.StreamHandler())
+handler_st = logging.StreamHandler()
+handler_st.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
+logging.getLogger().addHandler(handler_st)
 
 # Internal
 from db import Database
@@ -40,6 +42,7 @@ from blueprints.content import UserContent
 from blueprints.errorhandler import ErrorHandler
 from blueprints.users import UserController
 from blueprints.articles import ArticleController
+from blueprints.notes import NoteController
 
 dbs = Database()
 #rss = RSSMonitor()
@@ -96,6 +99,7 @@ if __name__ == '__main__':
     app.register_blueprint(DebugTools)
     app.register_blueprint(UserController)
     app.register_blueprint(ArticleController)
+    app.register_blueprint(NoteController)
 
     user_init()
 
