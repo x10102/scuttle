@@ -7,12 +7,10 @@ from models.note import Note
 
 NoteController = Blueprint('NoteController', __name__)
 
-
 @NoteController.route('/notes')
 @login_required
 def notes():
     dbs = c.config['database']
-
     return render_template('notes.j2', form=NewNoteForm(), notes=dbs.get_notes(), js_token=generate_csrf(None, 'ajax_key'))
 
 

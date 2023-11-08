@@ -14,6 +14,7 @@ from secrets import token_urlsafe
 from models.user import User
 from passwords import pw_check, pw_hash
 from models.translation import Translation
+from models.note import Note
 from discord import DiscordClient
 
 # Scripts

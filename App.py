@@ -62,10 +62,6 @@ def index():
     sort = request.args.get('sort', type=str, default='az')
     return render_template('users.j2', users=dbs.get_stats(sort), lastupdate=dbs.lastupdated.strftime("%Y-%m-%d %H:%M:%S"))
 
-@app.route('/notes')
-def notes_test():
-    return render_template('notes.j2')
-
 def user_init():
     init_user, pwd = env.get("SCP_INIT_USER"), env.get("SCP_INIT_PASSWORD")
     if not init_user:
