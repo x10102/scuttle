@@ -32,14 +32,10 @@ def add_note():
 @login_required
 def delete_note():
     dbs = c.config['database']
-    csrf = request.form.get('csrf', "", str)
     delete = request.form.get('deleteid', None, int)
     if not delete:
         warning(f'Invalid request to AJAX endpoint as user {current_user.nickname} (ID: {current_user.get_id()}) from client IP {request.remote_addr}')
         abort(400)
-    if not validate_csrf(request.form.get('csrf', "", str), None, None, 'ajax_key'):
-        warning(f'CSRF validation failed for AJAX request as {current_user.nickname} (ID: {current_user.get_id()}) from client IP {request.remote_addr}')
-        abort(403)
     info(f'User {current_user.nickname} (ID: {current_user.get_id()}) deleted note ID {delete}')
     dbs.delete_note(delete)
     return "OK", 200
