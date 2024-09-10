@@ -1,0 +1,39 @@
+{% extends "base.j2" %}
+
+{% block content %}
+<h1 class="mt-2 text-4xl text-center">Zálohy</h1>
+<div class="flex flex-col w-3/4 h-48 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
+    <a class="w-32 glass-btn" href="{{url_for("AutobackupController.run_backup")}}">Spustit zálohu</a>
+</div>
+
+<div class="flex flex-col w-3/4 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
+    <table>
+        <tr>
+            <th>Datum zálohy</th>
+            <th>Vytvořil</th>
+            <th>SHA-1</th>
+            <th>Akce</th>
+        </tr>
+        <tr>
+            <td>11.02.2025</td>
+            <td><a href="{{ url_for('UserController.user', uid=23) }}" class="underline transition-all decoration-white/50 hover:text-blue-400">Cheems</a></td>
+            <td>a9c62d67...</td>
+            <td>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout"><i class="text-3xl transition-opacity bi bi-download opacity-40 hover:opacity-100"></i></a>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout podpis"><i class="text-3xl transition-opacity bi bi-key opacity-40 hover:opacity-100"></i></a>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Odstranit"><i class="text-3xl transition-opacity bi bi-trash opacity-40 hover:opacity-100"></i></a>
+            </td>
+        </tr>
+        <tr>
+            <td>09.09.2024</td>
+            <td><a href="{{ url_for('UserController.user', uid=23) }}" class="underline transition-all decoration-white/50 hover:text-blue-400">Cheems</a></td>
+            <td>b4c785da...</td>
+            <td>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout"><i class="text-3xl transition-opacity bi bi-download opacity-40 hover:opacity-100"></i></a>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout podpis"><i class="text-3xl transition-opacity bi bi-key opacity-40 hover:opacity-100"></i></a>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Odstranit"><i class="text-3xl transition-opacity bi bi-trash opacity-40 hover:opacity-100"></i></a>
+            </td>
+        </tr>
+    </table>
+</div>
+{% endblock content %}
