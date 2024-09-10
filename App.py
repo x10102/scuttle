@@ -1,4 +1,5 @@
 # Builtins
+from distutils.log import debug
 import json
 from logging import info, warning, error
 import logging
@@ -29,8 +30,9 @@ from blueprints.stats import StatisticsController
 from blueprints.api import ApiController
 from blueprints.rsspage import RssPageController
 from blueprints.oauth import OauthController
+from blueprints.autobackup import AutobackupController
 
-from extensions import login_manager, dbs, sched, oauth, rss, webhook
+from extensions import login_manager, dbs, sched, oauth, rss, webhook, portainer
 
 app = Flask(__name__)
 
@@ -129,6 +131,9 @@ def extensions_init() -> None:
     if rss.has_links:
         sched.add_job('Fetch RSS updates', rss.check, trigger='interval', hours=1)
 
+    # Check if Portainer config is present
+    if 'PORTAINER' in app.config:
+        portainer.init_app(app)
 
 # TODO: App factory??
 if __name__ == '__main__':
@@ -137,6 +142,10 @@ if __name__ == '__main__':
     # Load config file or create it if there isn't one
     ensure_config('config.json')
     app.config.from_file('config.json', json.load)
+
+    # Set debug logging level before doing anything else
+    if app.config['DEBUG']:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     # Ensure we have a directory to store the avatar thumbnails
     makedirs('./temp/avatar', exist_ok=True)
@@ -165,6 +174,7 @@ if __name__ == '__main__':
     app.register_blueprint(ApiController)
     app.register_blueprint(OauthController)
     app.register_blueprint(RssPageController)
+    app.register_blueprint(AutobackupController)
 
     # Create the admin user
     user_init()
@@ -172,7 +182,6 @@ if __name__ == '__main__':
 
     # Force oauthlib to allow insecure transport when debugging
     if app.config['DEBUG']:
-        logging.getLogger().setLevel(logging.DEBUG)
         warning('App running in debug mode!')
         env['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
         warning('OAUTHLIB insecure transport is enabled!')

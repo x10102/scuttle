@@ -6,14 +6,7 @@ from enum import IntEnum
 import json
 from logging import debug, warning
 
-@dataclass
-class Message:
-    msg_type: MessageType
-    tag: str
-    name: str = None
-    status: Status = None
-    error_kind: ErrorKind = None
-    total: int = None
+
 
 class MessageType(IntEnum):
     Handshake = 0,
@@ -82,6 +75,15 @@ class ErrorKind(IntEnum):
             case ErrorKind.ErrorGivingUp: return "Stahování revize opakovaně selhalo. Vzdávám to."
             case ErrorKind.ErrorTokenInvalidated: return "Wikidot zneplatnil token. Čekáme 30s."
 
+@dataclass
+class Message:
+    msg_type: MessageType
+    tag: str
+    name: str = None
+    status: Status = None
+    error_kind: ErrorKind = None
+    total: int = None
+
 def zmq_listener_thread(address: str, data_dict: dict, message_queue: Queue):
 
     context = zmq.Context()
@@ -89,10 +91,11 @@ def zmq_listener_thread(address: str, data_dict: dict, message_queue: Queue):
 
     # Connect to the sender's socket
     socket.bind(address)
-    info(f"ZMQ receiver bound to {address}")
+    print(f"ZMQ receiver bound to {address}")
 
     while True:
         message = socket.recv_string()
+        print("Message received")
         message_json = json.loads(message)
         tag = message_json['tag']
         message_type = MessageType(message_json['type'])
@@ -113,7 +116,7 @@ def zmq_listener_thread(address: str, data_dict: dict, message_queue: Queue):
                     'finished': False
                 }
                 message_queue.put_nowait(Message(message_type, tag))
-                debug(f"[{tag}] Established connection")
+                print(f"[{tag}] Established connection")
 
             case MessageType.Preflight:
                 message_queue.put_nowait(Message(message_type, tag, total=message_json['total']))

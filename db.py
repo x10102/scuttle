@@ -68,6 +68,16 @@ CREATE TABLE IF NOT EXISTS Note (
     FOREIGN KEY (idauthor) REFERENCES User(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS Backup (
+    id          INTEGER     NOT NULL PRIMARY KEY AUTOINCREMENT,
+    date        DATETIME    NOT NULL DEFAULT (datetime('now','localtime')),
+    articles    INTEGER     NOT NULL,
+    idauthor    INTEGER     NOT NULL,
+    sha1        BLOB        NOT NULL,
+    fingerprint BLOB        NOT NULL,
+    FOREIGN KEY (idauthor) REFERENCES User(id) ON DELETE NO ACTION
+);
+
 CREATE VIEW IF NOT EXISTS Frontpage AS
     SELECT User.id AS id, User.nickname AS nickname, User.discord AS discord, User.wikidot AS wikidot, User.display_name as display, 
     SUM(CASE WHEN Article.is_original=FALSE THEN 1 ELSE 0 END) AS translation_count, 
