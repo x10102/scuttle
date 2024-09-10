@@ -28,14 +28,14 @@ class PortainerConnector():
     }
     ```
     """
-    
+    __initialized = False
 
     def requires_auth(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             if getattr(self, 'url', None) == None:
                 raise PortainerError('No Portainer URL')
-            if not hasattr(self, '__jwt'):
+            if not hasattr(self, '_jwt'):
                 raise PortainerError(f"Not logged in")
             return func(self, *args, **kwargs)
         return wrapper
@@ -45,6 +45,8 @@ class PortainerConnector():
         PORTAINER_URL should be in this format: "https://portainer.xyz/api"
         i.e. WITH the api endpoint and WITHOUT a trailing slash
         """
+
+        debug('PortainerConnector initializing')
 
         if 'PORTAINER' not in app.config:
             warning('Portainer config not found')
@@ -73,7 +75,16 @@ class PortainerConnector():
         self.__password = config['PASSWORD']
         self.__env_id = config['ENV_ID']
         self.__container_name = config['CONTAINER_NAME']
+        self.__initialized = True
 
+        debug('PortainerConnector init complete')
+
+
+    def is_initialized(self) -> bool:
+        """
+        Returns true if all necessary config values are present and loaded
+        """
+        return self.__initialized
 
     def login(self, user: str = None, password: str = None):
         """
@@ -98,7 +109,7 @@ class PortainerConnector():
                 raise InvalidCredentialsError('Login failed, invalid credentials')
             case HTTPStatus.OK:
                 info('Login success')
-                self.__jwt = login_response.json()['jwt']
+                self._jwt = login_response.json()['jwt']
                 return
             case _:
                 error(f'Weird status code from portainer ({login_response.status_code} - {HTTPStatus(login_response.status_code).name})')
@@ -109,7 +120,7 @@ class PortainerConnector():
         filters = urllib.parse.quote(f'{{"name": ["{self.__container_name}"]}}')
         query_url = self.url+f'/endpoints/{self.__env_id}/docker/containers/json?all=true&filters={filters}'
 
-        response = requests.get(query_url, headers={"Authorization": f"Bearer {self.__jwt}"})
+        response = requests.get(query_url, headers={"Authorization": f"Bearer {self._jwt}"})
         if response.status_code != HTTPStatus.OK:
             error(f"Portainer request failed, got status code {response.status_code}")
             raise PortainerError(f"Portainer request failed, got status code {response.status_code}")
@@ -124,7 +135,7 @@ class PortainerConnector():
     def __container_action(self, action: str):
         container_id = self.__find_container()
         query_url = self.url+f'/endpoints/{self.__env_id}/docker/containers/{container_id}/{action}'
-        return requests.post(query_url, headers={"Authorization": f"Bearer {self.__jwt}"})
+        return requests.post(query_url, headers={"Authorization": f"Bearer {self._jwt}"})
 
     @requires_auth
     def start_container(self):
@@ -195,7 +206,7 @@ class PortainerConnector():
         container_id = self.__find_container()
         query_url = self.url+f'/endpoints/{self.__env_id}/docker/containers/{container_id}/wait'
         info('Waiting for container to exit')
-        response = requests.post(query_url, headers={"Authorization": f"Bearer {self.__jwt}"}, timeout=None)
+        response = requests.post(query_url, headers={"Authorization": f"Bearer {self._jwt}"}, timeout=None)
 
         match response.status_code:
             case HTTPStatus.OK:
