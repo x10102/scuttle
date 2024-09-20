@@ -1,4 +1,4 @@
-from distutils.log import error, info
+from logging import error, info
 from queue import Queue
 import zmq
 from dataclasses import dataclass

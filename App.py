@@ -1,7 +1,6 @@
 # Builtins
-from distutils.log import debug
 import json
-from logging import info, warning, error
+from logging import info, warning, error, debug
 import logging
 from os import environ as env, makedirs
 
