@@ -1,9 +1,45 @@
 {% extends "base.j2" %}
 
+{% block head %}
+<script src="{{url_for('static', filename='js/backup.js')}}" defer></script>
+{% endblock %}
+
 {% block content %}
 <h1 class="mt-2 text-4xl text-center">Zálohy</h1>
-<div class="flex flex-col w-3/4 h-48 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
-    <a class="w-32 glass-btn" href="{{url_for("AutobackupController.run_backup")}}">Spustit zálohu</a>
+<div class="flex flex-row w-3/4 h-56 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
+    <div>
+        <button class="w-32 glass-btn h-full" id="btn-start">Spustit zálohu</button>
+    </div>
+    <div class="flex flex-col mx-3">
+        <span><b>Poslední záloha:</b> 23.02.2050</span>
+        <span><b>Další automatická záloha:</b> 23.04.2050</span>
+        <span class="mt-2">
+            <h2 class="text-lg font-bold float-left">Rada O5</h2>
+            <p class="float-right opacity-50">25 / 25</p>
+        </span>
+        <div class="h-2 mt-1 w-full rounded-full bg-white/20">
+            <div class="h-full w-[50%] bg-white/80 rounded-full"></div>
+        </div>
+        <span class="mt-2">
+            <h2 class="text-lg font-bold float-left">SCP Foundation</h2>
+            <p class="float-right opacity-50">1256 / 1263</p>
+        </span>
+        <div class="h-2 mt-1 w-full rounded-full bg-white/20">
+            <div class="h-full w-[50%] bg-white/80 rounded-full"></div>
+        </div>
+        <span class="mt-2">
+        <h2 class="text-lg font-bold float-left">Wanderer's Library</h2>
+        <p class="float-right opacity-50">101 / 106</p>
+        </span>
+        <div class="h-2 mt-1 w-full rounded-full bg-white/20">
+            <div class="h-full w-[50%] bg-white/80 rounded-full"></div>
+        </div>
+    </div>
+    <div class="w-0 border-l border-white/30 mx-3"></div>
+    <div class="flex flex-col mx-3 flex-grow">
+        <span class="mb-1"><b>Status:</b> <span id="status-text">Čekám na spuštění</span></span>
+        <textarea class="h-full w-full border border-white/30 rounded-lg flex-grow bg-white/5 p-1 text-xs" readonly="true" id="log-area"></textarea>
+    </div>
 </div>
 
 <div class="flex flex-col w-3/4 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
