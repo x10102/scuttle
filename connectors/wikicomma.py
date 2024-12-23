@@ -6,8 +6,6 @@ from enum import IntEnum
 import json
 from logging import debug, warning
 
-
-
 class MessageType(IntEnum):
     Handshake = 0,
     Preflight = 1,
@@ -88,6 +86,7 @@ def zmq_listener_thread(address: str, data_dict: dict, message_queue: Queue):
 
     context = zmq.Context()
     socket = context.socket(zmq.PULL)
+    socket.RCVTIMEO = 60 * 5 * 1000  # 5 minutes
 
     # Connect to the sender's socket
     socket.bind(address)
