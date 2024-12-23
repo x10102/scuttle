@@ -5,6 +5,8 @@ from http import HTTPStatus
 import requests
 import urllib.parse
 
+INVALID_STATUS_CODE = -999
+
 class PortainerError(Exception): pass
 class InvalidConfigError(PortainerError): pass
 class InvalidCredentialsError(PortainerError): pass
@@ -214,4 +216,4 @@ class PortainerConnector():
                 return response.json()['StatusCode']
             case _:
                 error('Got unusual status code while waiting for exit')
-                return -999
+                return INVALID_STATUS_CODE
