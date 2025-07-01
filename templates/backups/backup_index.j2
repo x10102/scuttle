@@ -6,40 +6,75 @@
 
 {% block content %}
 <h1 class="mt-2 text-4xl text-center">Zálohy</h1>
-<div class="flex flex-row w-3/4 h-56 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
-    <div>
+<div class="flex flex-row w-3/4 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
+    <div class="flex flex-col">
         <button class="w-32 glass-btn h-full" id="btn-start">Spustit zálohu</button>
+        <button class="w-32 glass-btn py-2 mt-1" id="btn-config">Konfigurace</button>
     </div>
     <div class="flex flex-col mx-3">
         <span><b>Poslední záloha:</b> 23.02.2050</span>
         <span><b>Další automatická záloha:</b> 23.04.2050</span>
+        {% for wiki in wikis %}
         <span class="mt-2">
-            <h2 class="text-lg font-bold float-left">Rada O5</h2>
-            <p class="float-right opacity-50">25 / 25</p>
+            <h2 class="text-lg font-bold float-left">{{wiki.name}}</h2>
+            <p class="float-right opacity-50" id="{{wiki.name}}-count">N/A</p>
         </span>
         <div class="h-2 mt-1 w-full rounded-full bg-white/20">
-            <div class="h-full w-[50%] bg-white/80 rounded-full"></div>
+            <div class="h-full w-0 bg-white/80 rounded-full" id="{{wiki.name}}-progress"></div>
         </div>
-        <span class="mt-2">
-            <h2 class="text-lg font-bold float-left">SCP Foundation</h2>
-            <p class="float-right opacity-50">1256 / 1263</p>
-        </span>
-        <div class="h-2 mt-1 w-full rounded-full bg-white/20">
-            <div class="h-full w-[50%] bg-white/80 rounded-full"></div>
-        </div>
-        <span class="mt-2">
-        <h2 class="text-lg font-bold float-left">Wanderer's Library</h2>
-        <p class="float-right opacity-50">101 / 106</p>
-        </span>
-        <div class="h-2 mt-1 w-full rounded-full bg-white/20">
-            <div class="h-full w-[50%] bg-white/80 rounded-full"></div>
-        </div>
+        {% endfor %}
     </div>
     <div class="w-0 border-l border-white/30 mx-3"></div>
     <div class="flex flex-col mx-3 flex-grow">
         <span class="mb-1"><b>Status:</b> <span id="status-text">Čekám na spuštění</span></span>
         <textarea class="h-full w-full border border-white/30 rounded-lg flex-grow bg-white/5 p-1 text-xs" readonly="true" id="log-area"></textarea>
     </div>
+</div>
+
+<div class="flex flex-col w-3/4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20 hidden" id="config-container">
+  <h1 class="text-xl mb-2 border-r border-b border-white/20 rounded-br-xl w-fit p-3 inline-block">Konfigurace</h1>
+  <button class="mb-2 border rounded-full border-white/20 w-fit px-4 ml-2 inline-block hover:bg-white/10 transition-all" id="save-config">Uložit</button>
+
+  <div class="m-4">
+  <div class="flex flex-row w-full gap-6">
+    <div class="flex flex-col flex-1 gap-4">
+      <div>
+        <h2 class="text-lg">HTTP Proxy</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="text" id="http-proxy">
+      </div>
+      <div>
+        <h2 class="text-lg">SOCKS Proxy</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="text" id="socks-proxy">
+      </div>
+      <div>
+        <h2 class="text-lg">Request delay</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="number" id="delay">
+      </div>
+      <div>
+        <h2 class="text-lg">Ratelimit size</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="number" id="rlimit-size">
+      </div>
+      <div>
+        <h2 class="text-lg">Ratelimit refill</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="number" id="rlimit-refill">
+      </div>
+    </div>
+    <div class="w-0 border-l border-white/30 mx-3"></div>
+    <div class="flex flex-col flex-1 gap-4">
+      <div>
+        <h2 class="text-lg">Wiki list</h2>
+        <textarea class="w-full border border-white/30 rounded-lg flex-grow bg-white/5 p-1 text-xs break-keep" rows="8" wrap="off" id="wikilist"></textarea>
+      </div>
+      <div>
+        <h2 class="text-lg">Blacklist</h2>
+        <textarea class="w-full border border-white/30 rounded-lg flex-grow bg-white/5 p-1 text-xs break-keep" rows="8" wrap="off" id="blacklist"></textarea>
+      </div>
+    </div>
+  </div>
+  </div>
+
+
+    
 </div>
 
 <div class="flex flex-col w-3/4 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
@@ -72,4 +107,5 @@
         </tr>
     </table>
 </div>
+
 {% endblock content %}

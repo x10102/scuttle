@@ -112,10 +112,26 @@ class UserHasType(BaseModel):
 class Backup(BaseModel):
     id = AutoField()
     date = TimestampField()
-    article_count = IntegerField()
+    article_count = IntegerField(null=True)
     author = ForeignKeyField(User, backref="author")
-    fingerprint = CharField(16)
-    sha1 = CharField(48)
+    fingerprint = CharField(16, null=True)
+    sha1 = CharField(48, null=True, unique=True)
+    status = BlobField(null=True)
+
+class Wiki(BaseModel):
+    id = AutoField()
+    url = TextField()
+    name = TextField()
+    total_artices = IntegerField(null=True)
+
+class WikiCommaConfig(BaseModel):
+    id = AutoField()
+    http_proxy = TextField(null=True)
+    socks_proxy = TextField(null=True)
+    delay = IntegerField(null=True)
+    ratelimit_size = IntegerField(null=True)
+    ratelimit_refill = IntegerField(null=True)
+    blacklist = TextField(null=True)
 
 class Series(ViewModel):
     series = IntegerField()
@@ -157,7 +173,7 @@ class Frontpage(ViewModel):
     correction_count = IntegerField()
     original_count = IntegerField()
 
-models = [User, Article, Backup, Note, UserType, UserHasType]
+models = [User, Article, Backup, Note, UserType, UserHasType, Backup, Wiki, WikiCommaConfig]
 
 def last_update() -> datetime.datetime:
     return Article.select(fn.MAX(Article.added)).scalar()

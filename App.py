@@ -140,7 +140,7 @@ def extensions_init() -> None:
         sched.add_job('Fetch RSS updates', rss.check, trigger='interval', hours=1)
 
     # Check if Portainer config is present
-    if 'PORTAINER' in app.config:
+    if 'BACKUP' in app.config and 'PORTAINER' in app.config['BACKUP']:
         portainer.init_app(app)
 
 # TODO: App factory??

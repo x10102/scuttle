@@ -1,6 +1,5 @@
 from logging import error, info
 from queue import Queue
-import zmq
 from dataclasses import dataclass
 from enum import IntEnum
 import json
@@ -36,6 +35,7 @@ class Status(IntEnum):
             case Status.FilesPending: return "Zpracovávám chybějící soubory."
             case Status.Compressing: return "Komprimuji data."
             case Status.FatalError: return "Fatální chyba klienta. Nelze pokračovat."
+            case Status.Done: return "Hotovo, WikiComma klient se ukončuje"
             case _: return "Neznámý status."
 
 class ErrorKind(IntEnum):
@@ -81,66 +81,3 @@ class Message:
     status: Status = None
     error_kind: ErrorKind = None
     total: int = None
-
-def zmq_listener_thread(address: str, data_dict: dict, message_queue: Queue):
-
-    context = zmq.Context()
-    socket = context.socket(zmq.PULL)
-    socket.RCVTIMEO = 60 * 5 * 1000  # 5 minutes
-
-    # Connect to the sender's socket
-    socket.bind(address)
-    print(f"ZMQ receiver bound to {address}")
-
-    while True:
-        message = socket.recv_string()
-        print("Message received")
-        message_json = json.loads(message)
-        tag = message_json['tag']
-        message_type = MessageType(message_json['type'])
-        match message_type:
-            case MessageType.PageDone:
-                data_dict[tag]['done']+=1
-                debug(f"[{tag}] Done: {data_dict[tag]['done']} / {data_dict[tag]['total']}")
-
-            case MessageType.PagePostponed:
-                data_dict[tag]['postponed']+=1
-                debug(f"[{tag}] Postponed: {data_dict[tag]['postponed']} / {data_dict[tag]['total']}")
-
-            case MessageType.Handshake:
-                data_dict[tag] = {
-                    'done': 0,
-                    'total': 0,
-                    'postponed': 0,
-                    'finished': False
-                }
-                message_queue.put_nowait(Message(message_type, tag))
-                print(f"[{tag}] Established connection")
-
-            case MessageType.Preflight:
-                message_queue.put_nowait(Message(message_type, tag, total=message_json['total']))
-                debug(f"[{tag}] Preflight info: {message_json['total']} total pages")
-                data_dict[tag]['total'] = message_json['total']
-
-            case MessageType.Progress:
-                message_queue.put_nowait(Message(message_type, tag, status=Status(message_json['status'])))
-                debug(f"[{tag}] Status: {Status(message_json['status']).name}")
-
-            case MessageType.ErrorNonfatal:
-                message_queue.put_nowait(Message(message_type, tag, error_kind=ErrorKind(message_json['errorKind'])))
-                warning(f"[{tag}] Encountered Error: {ErrorKind(message_json['errorKind']).name}")
-
-            case MessageType.ErrorFatal:
-                message_queue.put_nowait(Message(message_type, tag, error_kind=ErrorKind(message_json['errorKind'])))
-                error(f"[{tag}] Encountered Error: {ErrorKind(message_json['errorKind']).name}. Exiting")
-                return
-            
-            case MessageType.FinishSuccess:
-                message_queue.put_nowait(Message(MessageType.FinishSuccess, tag))
-                data_dict[tag]['finished'] = True
-                debug(f"[{tag}] Status: DONE")
-                if all([wiki['finished'] for wiki in data_dict.values()]):
-                    debug("BACKUP FINISHED")
-                    message_queue.put_nowait(Message(MessageType.FinishSuccess, "all"))
-                    return
-        

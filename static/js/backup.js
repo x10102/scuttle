@@ -10,7 +10,25 @@ async function start_backup() {
     }
 }
 
+async function save_config() {
+    const payload = {
+        socks_proxy: $('#socks-proxy').val() || null,
+        http_proxy: $('#http-proxy').val() || null,
+        wikis: $('#wikilist').val() || null,
+        blacklist: $('#blacklist').val() || null,
+        delay: parseInt($('#delay').val(), 10) || null,
+        ratelimit_size: parseInt($('#rlimit_size').val()) || null,
+        ratelimit_refill: parseInt($('#rlimit_refill').val()) || null,
+    }
+    await fetch('/backup/config', {
+        method: "POST",
+        body: JSON.stringify(payload)
+    })
+}
+
 $("#btn-start").on("click", start_backup);
+$("#btn-config").on("click", () => {$('#config-container').fadeToggle()});
+$("#save-config").on("click", save_config)
 last_status_id = -1
 const backupTrigger = document.currentScript.getAttribute('run_url')
 

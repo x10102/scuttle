@@ -42,7 +42,19 @@ cd translatordb_web
         "http://your-wiki.wikidot.com/feed/site-changes.xml",
         "http://your-wanderers-library.wikidot.com/feed/site-changes.xml",
         "http://your-backrooms-or-whatever.wikidot.com/feed/site-changes.xml"
-    ]
+    ],
+    "FIX_PROXY": [true / false],
+    "BACKUP": {
+        "WIKICOMMA_START_METHOD": ["container" / "command"],
+        "PORTAINER": {
+            "URL": [PORTAINER API URL],
+            "USER": [PORTAINER USER],
+            "PASSWORD": [PORTAINER PASSWORD],
+            "ENV_ID": [PORTAINER ENVIRONMENT ID],
+            "CONTAINER_NAME": [CONTAINER NAME]
+        },
+        "START_CMD": [WIKICOMMA START COMMAND]
+    }
 }
 ```
 `DISCORD_TOKEN`, `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` can be found on your [Discord Developer Portal](https://discord.com/developers/applications).

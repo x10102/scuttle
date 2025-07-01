@@ -20,12 +20,14 @@ class PortainerConnector():
 
     ```txt
     [config_root] {
-        PORTAINER {
-            URL: API URL - see init_app()
-            USER: Username
-            PASSWORD: Password
-            ENV_ID: Portainer environment ID. Should be 1 if you're only running localy, check GUI
-            CONTAINER_NAME: The container's name
+        BACKUP {
+            PORTAINER {
+                URL: API URL - see init_app()
+                USER: Username
+                PASSWORD: Password
+                ENV_ID: Portainer environment ID. Should be 1 if you're only running locally, check GUI
+                CONTAINER_NAME: The container's name
+            }
         }
     }
     ```
@@ -50,11 +52,11 @@ class PortainerConnector():
 
         debug('PortainerConnector initializing')
 
-        if 'PORTAINER' not in app.config:
+        if 'PORTAINER' not in app.config['BACKUP']:
             warning('Portainer config not found')
             raise InvalidConfigError('Portainer config not found')
 
-        config = app.config['PORTAINER']
+        config = app.config['BACKUP']['PORTAINER']
 
         if 'URL' not in config:
             warning('Portainer API URL not found')
