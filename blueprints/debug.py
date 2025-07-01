@@ -2,6 +2,7 @@ from http import HTTPStatus
 from logging import critical, warning, error
 from flask import Blueprint, redirect, url_for, current_app, request, render_template, send_from_directory, flash, abort
 from flask_login import login_required, current_user
+from db import Backup
 from datetime import datetime
 
 from extensions import sched, webhook
@@ -68,3 +69,9 @@ def raise_error():
 def raise_critical_error():
     critical("Critical error handling test")
     abort(HTTPStatus.INTERNAL_SERVER_ERROR)
+
+@DebugTools.route('/debug/backup/forceend')
+def force_end_backup():
+    Backup.update(is_finished=True).execute()
+    flash("Záloha ukončena")
+    return redirect(request.referrer or url_for('index'))

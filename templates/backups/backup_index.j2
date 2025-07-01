@@ -85,26 +85,22 @@
             <th>SHA-1</th>
             <th>Akce</th>
         </tr>
+        {% for backup in backups %}
         <tr>
-            <td>11.02.2025</td>
-            <td><a href="{{ url_for('UserController.user', uid=23) }}" class="underline transition-all decoration-white/50 hover:text-blue-400">Cheems</a></td>
-            <td>a9c62d67...</td>
+            <td>{{backup.date.strftime("%Y-%m-%d")}}</td>
+            <td><a href="{{ url_for('UserController.user', uid=backup.author.id) }}" class="underline transition-all decoration-white/50 hover:text-blue-400">Cheems</a></td>
+            <td>{{backup.sha1 or "N/A"}}</td>
             <td>
+                {% if backup.is_finished %}
                 <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout"><i class="text-3xl transition-opacity bi bi-download opacity-40 hover:opacity-100"></i></a>
                 <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout podpis"><i class="text-3xl transition-opacity bi bi-key opacity-40 hover:opacity-100"></i></a>
                 <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Odstranit"><i class="text-3xl transition-opacity bi bi-trash opacity-40 hover:opacity-100"></i></a>
+                {% else %}
+                <div class="animate-pulse px-4 rounded-lg text-blue-500">Záloha probíhá</div>
+                {% endif %}
             </td>
         </tr>
-        <tr>
-            <td>09.09.2024</td>
-            <td><a href="{{ url_for('UserController.user', uid=23) }}" class="underline transition-all decoration-white/50 hover:text-blue-400">Cheems</a></td>
-            <td>b4c785da...</td>
-            <td>
-                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout"><i class="text-3xl transition-opacity bi bi-download opacity-40 hover:opacity-100"></i></a>
-                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout podpis"><i class="text-3xl transition-opacity bi bi-key opacity-40 hover:opacity-100"></i></a>
-                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Odstranit"><i class="text-3xl transition-opacity bi bi-trash opacity-40 hover:opacity-100"></i></a>
-            </td>
-        </tr>
+        {% endfor %}
     </table>
 </div>
 

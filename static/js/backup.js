@@ -1,12 +1,27 @@
+function logMessage(message) {
+    
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const timestamp = `[${hours}:${minutes}:${seconds}]`;
+    const $textarea = $('#log-area');
+    
+    $textarea.append(timestamp + ' ' + message + '\n');
+    $textarea.scrollTop($textarea[0].scrollHeight);
+}
+
 async function start_backup() {
     let response = await fetch('/backup/start')
     switch(response.status) {
         case 200:
-            $('#status-text').text('Záloha spuštěna')
-            $('#log-area').append('Záloha úspěsně spuštěna')
+            $('#status-text').text('Záloha spuštěna');
+            logMessage("Záloha úspěšně spuštěna");
+            break;
         case 500:
-            $('#status-text').text('Chyba')
-            $('#log-area').append(await response.text()+"\n")
+            $('#status-text').text('Chyba');
+            logMessage(response.text());
+            break;
     }
 }
 

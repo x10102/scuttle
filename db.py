@@ -116,13 +116,18 @@ class Backup(BaseModel):
     author = ForeignKeyField(User, backref="author")
     fingerprint = CharField(16, null=True)
     sha1 = CharField(48, null=True, unique=True)
-    status = BlobField(null=True)
+    is_finished = BooleanField(default=False)
 
 class Wiki(BaseModel):
     id = AutoField()
     url = TextField()
     name = TextField()
     total_artices = IntegerField(null=True)
+    is_active = BooleanField(default=True)
+
+class BackupHasWiki(BaseModel):
+    wiki = ForeignKeyField(Wiki)
+    backup = ForeignKeyField(Backup)
 
 class WikiCommaConfig(BaseModel):
     id = AutoField()
@@ -173,7 +178,7 @@ class Frontpage(ViewModel):
     correction_count = IntegerField()
     original_count = IntegerField()
 
-models = [User, Article, Backup, Note, UserType, UserHasType, Backup, Wiki, WikiCommaConfig]
+models = [User, Article, Backup, Note, UserType, UserHasType, Backup, Wiki, WikiCommaConfig, BackupHasWiki]
 
 def last_update() -> datetime.datetime:
     return Article.select(fn.MAX(Article.added)).scalar()
