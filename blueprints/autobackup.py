@@ -171,12 +171,13 @@ def backup_config():
                     wiki.save()
         else:
             Wiki.update(is_active=False).execute()
+        generate_config(path)
         # Log it just in case
         info(f"Accepted new WikiComma config by {current_user.nickname} (ID: {current_user.get_id()})")
-        return "OK", 200
+        return "Konfigurace uložena", 200
     except Exception as e:
-        error(f"Invalid config JSON: {str(e)}")
-        return "Invalid JSON", 400
+        error(f"Config couldn't be updated: {str(e)}")
+        return f"Konfiguraci nelze uložit ({str(e)})", 400
 
 @AutobackupController.route('/backup/start', methods=["GET"])
 def run_backup():

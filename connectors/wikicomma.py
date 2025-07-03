@@ -2,8 +2,10 @@ from logging import error, info
 from queue import Queue
 from dataclasses import dataclass
 from enum import IntEnum
+from flask import current_app
 import json
 from logging import debug, warning
+from db import WikiCommaConfig, Wiki
 
 class MessageType(IntEnum):
     Handshake = 0,
@@ -80,4 +82,41 @@ class Message:
     name: str = None
     status: Status = None
     error_kind: ErrorKind = None
+    error_message: str = None
     total: int = None
+
+def generate_config(path: str) -> bool:
+    cfg = current_app.config.get("BACKUP")
+    if not cfg:
+        error(f"Cannot generate config - missing key")
+        return False
+    for param in ['SELF_ADDRESS', 'BACKUP_COMMON_PATH', 'BACKUP_ARCHIVE_PATH']: 
+        if param not in cfg: 
+            error(f"Cannot generate backup config - missing parameter {param}")
+            return False
+    wc_config: WikiCommaConfig = WikiCommaConfig.get_or_none()
+    if not wc_config:
+        error("Cannot generate config - missing data")
+        return False
+    config = {
+        "base_directory": cfg['BACKUP_COMMON_PATH'],
+        "wikis": [{"name": w.name, "url": w.url} for w in Wiki.select().where(Wiki.is_active == True)],
+        "delay_ms": wc_config.delay,
+        "socks_proxy": wc_config.socks_proxy,
+        "http_proxy": wc_config.http_proxy,
+        "user_list_cache_freshness": 86400,
+        "maximum_jobs": None,
+        "scuttle_url": cfg['SELF_ADDRESS'],
+        "blacklist": [w for w in wc_config.blacklist.split('\n') if w] if wc_config.blacklist else [],
+        "ratelimit": {
+            "bucket_size": wc_config.ratelimit_size or 60,
+            "refill_seconds": wc_config.ratelimit_refill or 60
+        }
+    }
+    try:
+        with open(path, "w") as cfg_file:
+            json.dump(config, cfg_file, indent=4)
+    except:
+        error("Cannot generate config - I/O error")
+        return False
+    return True
