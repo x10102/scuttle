@@ -3,14 +3,17 @@ from dataclasses import dataclass
 from flask import Blueprint, redirect, render_template, url_for, current_app,jsonify, request
 from flask_login import current_user, login_required
 from connectors.portainer import PortainerError
-from extensions import portainer
-from connectors.wikicomma import Status, Message
+from extensions import portainer, webhook
+from connectors.wikicomma import Status, Message, MessageType, ErrorKind, generate_config
 from typing import List
-from db import WikiCommaConfig, Wiki, Backup
+from db import WikiCommaConfig, Wiki, Backup, User
 import os
 from jsonschema import validate
 from threading import Lock
 from datetime import datetime
+from typing import Dict
+from random import randint
+from playhouse.shortcuts import model_to_dict
 import urllib.parse
 import json
 import subprocess
@@ -30,7 +33,7 @@ class StatusMutex:
     mutex: Lock
     status: BackupStatus
 
-statuses = {}
+statuses: Dict[str, StatusMutex] = {}
 
 backup_config_schema = {
     'type': 'object',
@@ -78,7 +81,7 @@ status_message_schema = {
     'oneOf': [ 
         { 'properties': {
             'type': { 'enum': [0, 5, 6, 7] }
-        }, 'additionalProperties': False },
+        }},
         { 'properties': {
             'type': {'const': 1},
             'total': {'type': 'integer', 'minimum': 0}
@@ -105,7 +108,7 @@ status_message_schema = {
                     'status': {'enum': [0, 2, 3, 4, 5]}
                 }},
                 { 'properties': {
-                    'status': {'const': 2},
+                    'status': {'const': 1},
                     'done': {'type': 'integer', 'minimum': 0},
                     'postponed': {'type': 'integer', 'minimum': 0}
                 }, 'required': ['done', 'postponed']}
@@ -117,27 +120,84 @@ status_message_schema = {
 
 AutobackupController = Blueprint("AutobackupController", __name__)
 
+def finish_backup():
+    # Compress backup
+    # Move to archive
+    # Generate hash
+    # Sign and save signature to archive, fingerprint to db
+    Backup.update(is_finished=True).where(Backup.is_finished == False).execute()
+
 @AutobackupController.route('/backups', methods=["GET"])
 def backup_index():
-    return render_template('backups/backup_index.j2', wikis=Wiki.select(), backups=Backup.select())
+    return render_template('backups/backup_index.j2', wikis=Wiki.select().where(Wiki.is_active==True), backups=Backup.select().prefetch(User))
+
+@AutobackupController.route('/backup/<int:backup_id>/delete')
+def backup_delete(backup_id: int):
+    info(f"Backup ID {backup_id} deleted by user {current_user.nickname} (ID: {current_user.id})")
+    Backup.delete_by_id(backup_id)
+    return redirect(url_for('AutobackupController.backup_index'))
 
 @AutobackupController.route('/backup/status', methods=["GET", "POST"])
 def backup_status():
     if request.method == "GET":
         return jsonify([s.status for s in statuses.values()])
     try:
-        message = json.loads(request.data)
+        message = json.loads(json.loads(request.data))
         validate(message, status_message_schema)
+        tag = message['tag']
+        message_type = MessageType(message['type'])
+        current_message = Message(message_type, tag)
+    except Exception as e:
+        error(f"Received invalid status message")
+        error(str(e))
+    match message_type:
+        case MessageType.Handshake:
+            info(f"WikiComma client for {tag} connected")
+        case MessageType.Preflight:
+            current_message.total = message['total']
+            info(f"Counting {current_message.total} articles for {current_message.tag}")
+            with statuses[tag].mutex:
+                statuses[tag].status.total_articles = current_message.total
+                statuses[tag].status.messages.append(current_message)
+        case MessageType.Progress:
+            pass
+        case MessageType.ErrorFatal:
+            current_message.error_kind = ErrorKind(message['errorKind'])
+            current_message.error_message = str(current_message.error_kind)
+            error(f"Encountered fatal error: {current_message.error_message}")
+            with statuses[tag].mutex:
+                statuses[tag].status.status = Status.FatalError
+                statuses[tag].status.messages.append(current_message)
+        case MessageType.ErrorNonfatal:
+            current_message.error_kind = ErrorKind(message['errorKind'])
+            current_message.error_message = str(current_message.error_kind)
+            error(f"Encountered non-fatal error: {current_message.error_message}")
+            with statuses[tag].mutex:
+                statuses[tag].status.messages.append(current_message)
+        case MessageType.FinishSuccess:
+            info(f"Backup finished for site {tag}")
+            with statuses[tag].mutex:
+                statuses[tag].status.status = Status.Done
+                statuses[tag].status.messages.append(current_message)
+            if all([w.status.status == Status.Done for w in statuses.values()]):
+                info(f"Backup finished")
+                finish_backup()
+        case _:
+            warning("Received message of unknown/unused type")
+            return "Unknown type", 400
     return "OK"
 
 @AutobackupController.route('/backup/config', methods=["GET", "POST"])
 @login_required
 def backup_config():
     if request.method == "GET":
-        # TODO: Return current config to be displayed on the cfg page
-        current_config = WikiCommaConfig.get_or_create()
-        return "OK", 200
+        current_config = model_to_dict(WikiCommaConfig.get_or_create()[0], recurse=True, exclude={WikiCommaConfig.id})
+        wikis = [model_to_dict(w) for w in Wiki.select().where(Wiki.is_active == True)]
+        return jsonify({"config": current_config, "wikis": wikis}), 200
     try:
+        path = current_app.config.get("BACKUP").get("WIKICOMMA_CONFIG_PATH")
+        if not path:
+            raise RuntimeError("Cesta ke konfiguračnímu souboru není nastavena")
         # Parse the payload and make sure it's valid
         data = json.loads(request.data)
         validate(data, schema=backup_config_schema)
@@ -181,10 +241,16 @@ def backup_config():
 
 @AutobackupController.route('/backup/start', methods=["GET"])
 def run_backup():
+    # Check that we know how to start the backup
     start_method = current_app.config.get('BACKUP', {}).get('WIKICOMMA_START_METHOD')
     if start_method not in ['container', 'command']:
         error("WikiComma start method not set or invalid")
         return "WikiComma start method not set or invalid", 500
+    
+    # Check that we know where to put the backup once it's done
+    if 'BACKUP_ARCHIVE_PATH' not in current_app.config['BACKUP'] or 'BACKUP_COMMON_PATH' not in current_app.config['BACKUP']:
+        error("One or more backup paths are missing")
+        return "Backup common or archive path missing from config", 500
     
     info("Preparing to start backup")
 
@@ -235,6 +301,7 @@ def run_backup():
         try:
             info(f"Running command: {start_command}")
             # subprocess.run(start_command, shell=True).check_returncode()
+            # TODO: This shouldn't block
             os.system(start_command)
         except subprocess.CalledProcessError:
             error("Command failed, stopping backup")
