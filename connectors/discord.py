@@ -3,6 +3,7 @@ import json
 import time
 import typing as t
 from logging import warning, error, info
+from flask import current_app
 from http import HTTPStatus
 
 # External
@@ -149,6 +150,8 @@ class DiscordWebhook():
     def send_text(self, message: str, ping_user: int = 0) -> None:
         if not self.url:
             raise RuntimeError('Cannot send an uninitialized webhook (no URL specified)')
+        if current_app.config['DEBUG'] == True:
+            message = f"[TESTOVACÍ REŽIM - PROSÍM IGNORUJTE] {message}"
         if len(message) > 2000:
             raise ValueError(f'Message is too long ({len(message)} characters)')
         if ping_user:
