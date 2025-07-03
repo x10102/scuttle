@@ -16,6 +16,7 @@ from utils import ensure_config, get_user_role, get_role_color
 from connectors.discord import DiscordClient
 from connectors.rss import RSSUpdateType
 from tasks import discord_tasks
+from framework.menu import navigation_menu
 from db import User
 import db
 
@@ -161,6 +162,7 @@ if __name__ == '__main__':
     app.add_template_global(get_role_color)
     app.add_template_global(current_user, 'current_user')
     app.add_template_global(RSSUpdateType)
+    app.add_template_global(navigation_menu)
     
     # Load all the blueprints
     app.register_blueprint(ErrorHandler)
