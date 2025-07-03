@@ -33,7 +33,10 @@
 
 <div class="flex flex-col w-3/4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20 hidden" id="config-container">
   <h1 class="text-xl mb-2 border-r border-b border-white/20 rounded-br-xl w-fit p-3 inline-block">Konfigurace</h1>
-  <button class="mb-2 border rounded-full border-white/20 w-fit px-4 ml-2 inline-block hover:bg-white/10 transition-all" id="save-config">Uložit</button>
+  <div class="inline-block">
+    <button class="mb-2 border rounded-full border-white/20 w-fit px-4 ml-2 inline-block hover:bg-white/10 transition-all" id="save-config">Uložit</button>
+    <p class="result-badge" id="save-result">Konfigurace úspěšně uložena</p>
+  </div>
 
   <div class="m-4">
   <div class="flex flex-row w-full gap-6">
@@ -94,7 +97,7 @@
                 {% if backup.is_finished %}
                 <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout"><i class="text-3xl transition-opacity bi bi-download opacity-40 hover:opacity-100"></i></a>
                 <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Stáhnout podpis"><i class="text-3xl transition-opacity bi bi-key opacity-40 hover:opacity-100"></i></a>
-                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="" title="Odstranit"><i class="text-3xl transition-opacity bi bi-trash opacity-40 hover:opacity-100"></i></a>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="{{url_for('AutobackupController.backup_delete', backup_id=backup.id)}}" title="Odstranit"><i class="text-3xl transition-opacity bi bi-trash opacity-40 hover:opacity-100"></i></a>
                 {% else %}
                 <div class="animate-pulse px-4 rounded-lg text-blue-500">Záloha probíhá</div>
                 {% endif %}

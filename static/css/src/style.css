@@ -108,6 +108,10 @@ td {
   .btn-danger {
     @apply glass-btn border-red-500/40 hover:bg-red-500/40;
   }
+
+  .result-badge {
+    @apply inline-block ml-2 text-green-600 bg-green-300/5 px-2 rounded-full border-green-300/10 border select-none transition-all;
+  }
 }
 
 @layer utilities {
