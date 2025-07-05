@@ -187,15 +187,15 @@ def get_frontpage(sort: str, page: int):
     entries = Frontpage.select().join(User).limit(PAGE_ITEMS).offset(PAGE_ITEMS*page)
     match sort:
         case 'az':
-            result = entries.order_by(User.nickname.collate("NOCASE").asc())
+            result = entries.order_by(User.nickname.collate("NOCASE").asc()).prefetch(User)
         case 'points':
-            result = entries.order_by(Frontpage.points.desc())
+            result = entries.order_by(Frontpage.points.desc()).prefetch(User)
         case 'count':
-            result = entries.order_by(Frontpage.translation_count.desc())
+            result = entries.order_by(Frontpage.translation_count.desc()).prefetch(User)
         case 'corrections':
-            result = entries.order_by(Frontpage.correction_count.desc())
+            result = entries.order_by(Frontpage.correction_count.desc()).prefetch(User)
         case 'originals':
-            result = entries.order_by(Frontpage.original_count.desc())
+            result = entries.order_by(Frontpage.original_count.desc()).prefetch(User)
         case _:
-            result = entries.order_by(Frontpage.points.desc())
+            result = entries.order_by(Frontpage.points.desc()).prefetch(User)
     return result

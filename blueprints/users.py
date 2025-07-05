@@ -3,9 +3,8 @@ from peewee import IntegrityError
 from flask import Blueprint, url_for, redirect, session, request, render_template, abort, flash
 from forms import NewUserForm, EditUserForm
 from flask_login import current_user, login_required
-from db import Correction, User, Article
+from db import User, Article
 from logging import info
-from connectors.discord import DiscordClient
 from passwords import pw_hash
 from tasks import discord_tasks
 from secrets import token_urlsafe
@@ -79,8 +78,8 @@ def user(uid: int):
     user = User.get_or_none(User.id == uid) or abort(HTTPStatus.NOT_FOUND)
     corrections = list(user.corrections)
     # TODO: Extract constant
-    translations = list(user.articles.where(Article.is_original == False).order_by(Article.added.desc()).limit(15))
-    originals = list(user.articles.where(Article.is_original == True))
+    translations = list(user.articles.where(Article.is_original == False).order_by(Article.added.desc()).limit(15).prefetch(User))
+    originals = list(user.articles.where(Article.is_original == True).prefetch(User))
     return render_template('user.j2', user=user, stats=user.stats.first(), translations=translations, corrections=corrections, originals=originals, sort=sort)
 
 @UserController.route('/user/<int:uid>/delete', methods=["POST", "GET"])
