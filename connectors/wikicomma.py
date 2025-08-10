@@ -1,10 +1,11 @@
 from logging import error, info
 from queue import Queue
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
 from flask import current_app
 import json
 from logging import debug, warning
+import datetime
 from db import WikiCommaConfig, Wiki
 
 class MessageType(IntEnum):
@@ -84,6 +85,7 @@ class Message:
     error_kind: ErrorKind = None
     error_message: str = None
     total: int = None
+    timestamp: datetime.datetime = field(default_factory=lambda: datetime.datetime.timestamp(datetime.datetime.now()))
 
 def generate_config(path: str) -> bool:
     cfg = current_app.config.get("BACKUP")

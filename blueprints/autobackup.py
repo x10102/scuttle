@@ -1,22 +1,23 @@
+# Builtins
+import json, os, subprocess
 from logging import warning, info, error, debug
 from dataclasses import dataclass
-from flask import Blueprint, redirect, render_template, url_for, current_app,jsonify, request
-from flask_login import current_user, login_required
-from connectors.portainer import PortainerError
-from extensions import portainer, webhook
-from connectors.wikicomma import Status, Message, MessageType, ErrorKind, generate_config
-from typing import List
-from db import WikiCommaConfig, Wiki, Backup, User
-import os
+from typing import List, Dict
 from jsonschema import validate
 from threading import Lock
 from datetime import datetime
-from typing import Dict
-from random import randint
-from playhouse.shortcuts import model_to_dict
+
+# Internal
+from connectors.portainer import PortainerError
+from extensions import portainer, webhook
+from connectors.wikicomma import Status, Message, MessageType, ErrorKind, generate_config
+from db import WikiCommaConfig, Wiki, Backup, User
+
+# External
 import urllib.parse
-import json
-import subprocess
+from flask import Blueprint, redirect, render_template, url_for, current_app,jsonify, request
+from flask_login import current_user, login_required
+from playhouse.shortcuts import model_to_dict
 
 @dataclass
 class BackupStatus:
@@ -160,7 +161,14 @@ def backup_status():
                 statuses[tag].status.total_articles = current_message.total
                 statuses[tag].status.messages.append(current_message)
         case MessageType.Progress:
-            pass
+            backup_phase = Status(message['status'])
+            with statuses[tag].mutex:
+                if backup_phase == Status.PagesMain:
+                    statuses[tag].status.finished_articles = message['done']
+                    statuses[tag].status.postponed_articles = message['postponed']
+                statuses[tag].status.status = backup_phase
+                current_message.status = backup_phase
+                statuses[tag].status.messages.append(current_message)
         case MessageType.ErrorFatal:
             current_message.error_kind = ErrorKind(message['errorKind'])
             current_message.error_message = str(current_message.error_kind)
