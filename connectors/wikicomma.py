@@ -103,7 +103,7 @@ def generate_config(path: str) -> bool:
     config = {
         "base_directory": cfg['BACKUP_COMMON_PATH'],
         "wikis": [{"name": w.name, "url": w.url} for w in Wiki.select().where(Wiki.is_active == True)],
-        "delay_ms": wc_config.delay,
+        "delay_ms": wc_config.delay or 200,
         "socks_proxy": wc_config.socks_proxy,
         "http_proxy": wc_config.http_proxy,
         "user_list_cache_freshness": 86400,
