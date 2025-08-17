@@ -170,11 +170,20 @@ let updateIntervalId = 0;
 
 function updateStatus() {
   fetch('/backup/status').then(response => response.json()).then(data => {
+    // For the status update on page load
+    if(data.length === 0) {
+      // No backup is running, return
+      return
+    } else if(updateIntervalId === 0) {
+      // A backup has already been started, keep updating
+      $('#status-text').text('Záloha spuštěna');
+      updateIntervalId = setInterval(updateStatus, 2000)
+    }
     messages = []
     messageStrings = []
     data.forEach(wiki => {
       $(`#${wiki.wiki_tag}-count`).text(`${wiki.finished_articles} / ${wiki.total_articles}`)
-      $(`#${wiki.wiki_tag}-progress`).animate({width: `${(wiki.total_articles / wiki.finished_articles) * 100}%`})
+      $(`#${wiki.wiki_tag}-progress`).animate({width: `${(wiki.finished_articles / wiki.total_articles) * 100}%`})
       messages.push(...wiki.messages)
     })
     messages.sort((a, b) => a.timestamp - b.timestamp)
@@ -213,16 +222,17 @@ function logMessage(message) {
 }
 
 async function start_backup() {
-    setInterval(updateStatus, 2000);
+    updateIntervalId = setInterval(updateStatus, 2000);
+    $('#status-text').text('Záloha spuštěna');
     let response = await fetch('/backup/start')
     switch(response.status) {
         case 200:
-            $('#status-text').text('Záloha spuštěna');
             logMessage("Záloha úspěšně spuštěna");
             break;
         case 500:
             $('#status-text').text('Chyba');
             logMessage(response.text());
+            clearInterval(updateIntervalId);
             break;
     }
 }
@@ -278,6 +288,7 @@ $(function() {
         $("#blacklist").val(data.config.blacklist)
         data.wikis.forEach(wiki => $("#wikilist").append(wiki.url+'\n'))
     })
+    updateStatus()
 })
 
 function setProgressVal(progressbar_id, progress) {
