@@ -15,9 +15,11 @@ from db import WikiCommaConfig, Wiki, Backup, User
 
 # External
 import urllib.parse
-from flask import Blueprint, redirect, render_template, url_for, current_app,jsonify, request
+from flask import Blueprint, redirect, render_template, url_for, current_app,jsonify, request, abort, send_file
 from flask_login import current_user, login_required
 from playhouse.shortcuts import model_to_dict
+import py7zr
+import hashlib
 
 @dataclass
 class BackupStatus:
@@ -117,27 +119,59 @@ status_message_schema = {
     ]
 }
 
-# TODO: require auth
 
 AutobackupController = Blueprint("AutobackupController", __name__)
 
 def finish_backup():
-    # Compress backup
-    # Move to archive
-    # Generate hash
-    # Sign and save signature to archive, fingerprint to db
+    info(f"Saving backup")
+    archive_path = os.path.join(current_app.config['BACKUP']['BACKUP_ARCHIVE_PATH'], "current.7z")
+    try:
+        with py7zr.SevenZipFile(archive_path, 'w') as archive:
+            archive.writeall(current_app.config['BACKUP']['BACKUP_COMMON_PATH'], 'backup')
+        with open(archive_path, 'rb') as archive:
+            hash = hashlib.sha1(archive.read()).hexdigest()
+    except Exception as e:
+        error("Couldn't compress backup (check config paths)")
+        error(str(e))
+    else:
+        info(f"Archive hash is: {hash}")
+        os.rename(archive_path, os.path.join(current_app.config['BACKUP']['BACKUP_ARCHIVE_PATH'], f'{hash}.7z'))
+        Backup.update(sha1=hash).where(Backup.is_finished == False).execute()
+    # TODO: Sign and save signature to archive, fingerprint to db
+    backup_done_message = f"```Záloha dokončena v {datetime.now().strftime("%H:%M:%S %d-%m-%y")}:\n\n"
+    for wiki in statuses.values():
+        status = wiki.status
+        backup_done_message += f"{status.wiki_tag}\nZálohováno {status.finished_articles} z {status.total_articles} článků\n"
+        backup_done_message += f"Zaznamenáno {status.total_errors} chyb\n\n"
+    backup_done_message += f"Kontrolní součet archivu je {hash}```"
+    #webhook.send_text(backup_done_message)
+    statuses.clear()
     Backup.update(is_finished=True).where(Backup.is_finished == False).execute()
 
 @AutobackupController.route('/backups', methods=["GET"])
+@login_required
 def backup_index():
     return render_template('backups/backup_index.j2', wikis=Wiki.select().where(Wiki.is_active==True), backups=Backup.select().prefetch(User))
 
 @AutobackupController.route('/backup/<int:backup_id>/delete')
+@login_required
 def backup_delete(backup_id: int):
+    # TODO: 2FA
     info(f"Backup ID {backup_id} deleted by user {current_user.nickname} (ID: {current_user.id})")
     Backup.delete_by_id(backup_id)
     return redirect(url_for('AutobackupController.backup_index'))
 
+@AutobackupController.route('/backup/<int:backup_id>/download')
+@login_required
+def backup_download(backup_id: int):
+    backup = Backup.get_or_none(Backup.id == backup_id) or abort(404)
+    archive_path = current_app.config['BACKUP']['BACKUP_ARCHIVE_PATH']
+    backup_path = os.path.join(archive_path, f'{backup.sha1}.7z')
+    download_name = backup.date.strftime("backup-%d-%m-%y.7z")
+    if not os.path.exists(backup_path): abort(404)
+    return send_file(backup_path, as_attachment=True, download_name=download_name)
+
+# TODO: This doesn't require auth for now as logging wikicomma in would be a pain in the ass
 @AutobackupController.route('/backup/status', methods=["GET", "POST"])
 def backup_status():
     if request.method == "GET":
@@ -148,6 +182,7 @@ def backup_status():
         tag = message['tag']
         message_type = MessageType(message['type'])
         current_message = Message(message_type, tag)
+        print(current_message)
     except Exception as e:
         error(f"Received invalid status message")
         error(str(e))
@@ -248,6 +283,7 @@ def backup_config():
         return f"Konfiguraci nelze uložit ({str(e)})", 400
 
 @AutobackupController.route('/backup/start', methods=["GET"])
+@login_required
 def run_backup():
     # Check that we know how to start the backup
     start_method = current_app.config.get('BACKUP', {}).get('WIKICOMMA_START_METHOD')
