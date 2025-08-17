@@ -19,6 +19,7 @@ Details on the scoring system can be found on our [Discord](https://discord.gg/A
 - [X] A statistics page
 - [ ] Automatic word counting (hard >w<)
 - [ ] Improve responsivity on mobile and smaller windows
+- [ ] Localization (Low-prio for now, if you want to use SCUTTLE on your branch, let us know!)
 
 ## Installation (manual)
 ### 1. Clone the repository
