@@ -15,7 +15,7 @@ from passwords import pw_hash
 from utils import ensure_config, get_user_role, get_role_color
 from connectors.discord import DiscordClient
 from connectors.rss import RSSUpdateType
-from tasks import discord_tasks
+from tasks import discord_tasks, backup_task
 from db import User
 import db
 
@@ -124,6 +124,9 @@ def extensions_init() -> None:
         sched.add_job('Fetch nicknames', lambda: discord_tasks.update_nicknames_task(), trigger='interval', days=4)
     else:
         warning('Discord API token not set. Profiles won\'t be updated!')
+
+    if app.config.get('BACKUP', {}).get('BACKUP_INTERVAL') is not None:
+        sched.add_job('autobackup_run', lambda: backup_task.run_backup_task(app.config['BACKUP']['BACKUP_INTERVAL']), trigger='interval', minutes=1)
 
     # Checking if we have a webhook URL
     webhook_url = app.config.get('DISCORD_WEBHOOK_URL', None)

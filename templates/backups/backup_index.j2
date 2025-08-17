@@ -12,8 +12,8 @@
         <button class="w-32 glass-btn py-2 mt-1" id="btn-config">Konfigurace</button>
     </div>
     <div class="flex flex-col mx-3">
-        <span><b>Poslední záloha:</b> 23.02.2050</span>
-        <span><b>Další automatická záloha:</b> 23.04.2050</span>
+        <span><b>Poslední záloha:</b> {{last_backup}}</span>
+        <span><b>Další automatická záloha:</b> {{next_backup}}</span>
         {% for wiki in wikis %}
         <span class="mt-2">
             <h2 class="text-lg font-bold float-left">{{wiki.name}}</h2>

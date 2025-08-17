@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import List, Dict
 from jsonschema import validate
 from threading import Lock
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Internal
 from connectors.portainer import PortainerError
@@ -119,7 +119,6 @@ status_message_schema = {
     ]
 }
 
-
 AutobackupController = Blueprint("AutobackupController", __name__)
 
 def finish_backup():
@@ -151,7 +150,16 @@ def finish_backup():
 @AutobackupController.route('/backups', methods=["GET"])
 @login_required
 def backup_index():
-    return render_template('backups/backup_index.j2', wikis=Wiki.select().where(Wiki.is_active==True), backups=Backup.select().prefetch(User))
+    last_backup = Backup.select().order_by(Backup.date.desc()).first()
+    interval = current_app.config.get("BACKUP", {}).get("BACKUP_INTERVAL")
+    if interval is not None and last_backup is not None:
+        next_backup = last_backup.date + timedelta(seconds=interval)
+    else:
+        next_backup = 'N/A'
+    return render_template('backups/backup_index.j2', wikis=Wiki.select().where(Wiki.is_active==True),\
+                            backups=Backup.select().prefetch(User),
+                            last_backup=last_backup.date.strftime("%d.%m.%Y"),
+                            next_backup=next_backup.strftime("%d.%m.%Y"))
 
 @AutobackupController.route('/backup/<int:backup_id>/delete')
 @login_required
