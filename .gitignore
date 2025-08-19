@@ -186,3 +186,6 @@ profiles
 # Misc files
 wcmacfg.json
 archive
+
+# Keys
+data/crypto

@@ -5,7 +5,7 @@ from forms import NewUserForm, EditUserForm
 from flask_login import current_user, login_required
 from db import User, Article
 from logging import info
-from passwords import pw_hash
+from crypto import pw_hash
 from tasks import discord_tasks
 from secrets import token_urlsafe
 

@@ -6,16 +6,18 @@ from typing import List, Dict
 from jsonschema import validate
 from threading import Lock
 from datetime import datetime, timedelta
+import textwrap
 
 # Internal
 from connectors.portainer import PortainerError
 from extensions import portainer, webhook
 from connectors.wikicomma import Status, Message, MessageType, ErrorKind, generate_config
 from db import WikiCommaConfig, Wiki, Backup, User
+from crypto import sign_file, get_fingerprint
 
 # External
 import urllib.parse
-from flask import Blueprint, redirect, render_template, url_for, current_app,jsonify, request, abort, send_file
+from flask import Blueprint, redirect, render_template, url_for, current_app, jsonify, request, abort, send_file, flash
 from flask_login import current_user, login_required
 from playhouse.shortcuts import model_to_dict
 import py7zr
@@ -133,17 +135,34 @@ def finish_backup():
         error("Couldn't compress backup (check config paths)")
         error(str(e))
     else:
+        archive = os.path.join(current_app.config['BACKUP']['BACKUP_ARCHIVE_PATH'], f'{hash}.7z')
         info(f"Archive hash is: {hash}")
-        os.rename(archive_path, os.path.join(current_app.config['BACKUP']['BACKUP_ARCHIVE_PATH'], f'{hash}.7z'))
+        os.rename(archive_path, archive)
         Backup.update(sha1=hash).where(Backup.is_finished == False).execute()
-    # TODO: Sign and save signature to archive, fingerprint to db
+
+    signature = sign_file(archive)
+    signed = True
+    if not signature:
+        error('Signing backup failed')
+        signed = False
+    else:
+        # Ugly
+        with open(archive+'.asc', 'w') as sig_file:
+            sig_file.write(str(signature))
+
     backup_done_message = f"```Záloha dokončena v {datetime.now().strftime("%H:%M:%S %d-%m-%y")}:\n\n"
     for wiki in statuses.values():
         status = wiki.status
         backup_done_message += f"{status.wiki_tag}\nZálohováno {status.finished_articles} z {status.total_articles} článků\n"
         backup_done_message += f"Zaznamenáno {status.total_errors} chyb\n\n"
-    backup_done_message += f"Kontrolní součet archivu je {hash}```"
-    #webhook.send_text(backup_done_message)
+    if not signed:
+        backup_done_message += "Zálohu se nepodařilo podepsat!\n"
+    else:
+        readable_key = ' '.join(textwrap.wrap(str(get_fingerprint()), 4))
+        backup_done_message += f"Soubor je podepsán pomocí klíče s otiskem {readable_key}, před obnovením zkontrolujte signaturu!\n\n"
+    backup_done_message += f"Kontrolní součet archivu je {hash}\n\n"
+    backup_done_message += "Administrace Záznamů a Informační Bezpečnosti vám přeje hezký den!```" # Be polite :3
+    webhook.send_text(backup_done_message)
     statuses.clear()
     Backup.update(is_finished=True).where(Backup.is_finished == False).execute()
 
@@ -157,7 +176,7 @@ def backup_index():
     else:
         next_backup = 'N/A'
     return render_template('backups/backup_index.j2', wikis=Wiki.select().where(Wiki.is_active==True),\
-                            backups=Backup.select().prefetch(User),
+                            backups=Backup.select().order_by(Backup.date.desc()).prefetch(User),
                             last_backup=last_backup.date.strftime("%d.%m.%Y"),
                             next_backup=next_backup.strftime("%d.%m.%Y"))
 
@@ -178,6 +197,18 @@ def backup_download(backup_id: int):
     download_name = backup.date.strftime("backup-%d-%m-%y.7z")
     if not os.path.exists(backup_path): abort(404)
     return send_file(backup_path, as_attachment=True, download_name=download_name)
+
+@AutobackupController.route('/backup/<int:backup_id>/download_signature')
+@login_required
+def backup_download_sig(backup_id: int):
+    backup = Backup.get_or_none(Backup.id == backup_id) or abort(404)
+    archive_path = current_app.config['BACKUP']['BACKUP_ARCHIVE_PATH']
+    signature_path = os.path.join(archive_path, f'{backup.sha1}.7z.asc')
+    download_name = backup.date.strftime("backup-%d-%m-%y.7z.asc")
+    if not os.path.exists(signature_path):
+        flash("Podpis neexistuje (huh)")
+        return redirect(url_for('AutobackupController.backup_index'))
+    return send_file(signature_path, as_attachment=True, download_name=download_name)
 
 # TODO: This doesn't require auth for now as logging wikicomma in would be a pain in the ass
 @AutobackupController.route('/backup/status', methods=["GET", "POST"])

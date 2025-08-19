@@ -7,7 +7,7 @@ from forms import LoginForm, PasswordChangeForm
 from flask_login import login_user, login_required, logout_user
 
 # Internal
-from passwords import pw_check, pw_hash
+from crypto import pw_check, pw_hash
 from db import User
 
 # TODO: Move templates

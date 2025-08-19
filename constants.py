@@ -1,0 +1,2 @@
+APP_VERSION = "1.1.0"
+BRANCH_ID = "CS"

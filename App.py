@@ -1,6 +1,6 @@
 # Builtins
 import json
-from logging import info, warning, error, debug
+from logging import info, warning, error, debug, critical
 import logging
 from os import environ as env, makedirs
 
@@ -11,12 +11,13 @@ from flask_login import current_user
 from waitress import serve
 
 # Internal
-from passwords import pw_hash
+from crypto import pw_hash
 from utils import ensure_config, get_user_role, get_role_color
 from connectors.discord import DiscordClient
 from connectors.rss import RSSUpdateType
 from tasks import discord_tasks, backup_task
 from db import User
+from crypto import generate_signing_keys
 import db
 
 # Blueprints
@@ -66,6 +67,7 @@ def fix_proxy() -> None:
     if "FIX_PROXY" in app.config and app.config['FIX_PROXY']:
         from werkzeug.middleware.proxy_fix import ProxyFix
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+        info("Registered ProxyFix middleware")
 
 def user_init() -> None:
     """
@@ -77,7 +79,7 @@ def user_init() -> None:
         return
     if not init_password:
         error(f"Password not specified for {init_user}")
-        exit(-1)
+        exit(1)
     if User.get_or_none(User.nickname == init_user) is not None:
         warning(f"Initial user {init_user} already exists")
         return
@@ -192,6 +194,11 @@ if __name__ == '__main__':
 
     # Initialize the database
     db.database.create_tables(db.models)
+
+    # Generate signing keys
+    if not generate_signing_keys():
+        critical("Error while generating signing keys. Exiting...")
+        exit(1)
 
     # Load extensions and enable integrations based on config
     extensions_init()
