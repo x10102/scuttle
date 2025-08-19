@@ -124,6 +124,14 @@ status_message_schema = {
 AutobackupController = Blueprint("AutobackupController", __name__)
 
 def finish_backup():
+    if Backup.get_or_none(Backup.is_finished == False) is None:
+        # Don't think that this can actually happen but it's better to handle it regardless
+        warning("No backups to finish!")
+        # If it does happen then I messed up somehow
+        # TODO: Remove this at some point
+        webhook.send_text("Unexpected state encountered while finishing backup (definitely a bug), please review application logs")
+        return
+
     info(f"Saving backup")
     archive_path = os.path.join(current_app.config['BACKUP']['BACKUP_ARCHIVE_PATH'], "current.7z")
     try:
