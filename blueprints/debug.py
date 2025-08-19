@@ -1,9 +1,10 @@
 from http import HTTPStatus
-from logging import critical, warning, error
+from logging import critical, warning, error, info
 from flask import Blueprint, redirect, url_for, current_app, request, render_template, send_from_directory, flash, abort
 from flask_login import login_required, current_user
 from db import Backup
 from datetime import datetime
+import os
 
 from extensions import sched, webhook
 
@@ -56,13 +57,18 @@ def webhook_testing():
 def export_database():
     download_name=datetime.strftime(datetime.now(), 'scp_%d_%m_%Y.db')
     flash("Databáze exportována!")
-    return send_from_directory('data', 'scp.db', as_attachment=True, download_name=download_name)
+    return send_from_directory(os.path.join(os.getcwd(), 'data'), 'scp.db', as_attachment=True, download_name=download_name)
 
 @DebugTools.route('/debug/raise_error')
 @login_required
 def raise_error():
     error("Error handling test")
     abort(HTTPStatus.INTERNAL_SERVER_ERROR)
+
+@DebugTools.route('/debug/export_pubkey')
+def export_pubkey():
+    info(f"Public key exported by user {current_user.nickname}")
+    return send_from_directory(os.path.join(os.getcwd(), 'data', 'crypto'), 'scuttle.pub.asc', as_attachment=True)
 
 @DebugTools.route('/debug/raise_critical')
 @login_required
