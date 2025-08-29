@@ -83,7 +83,6 @@ class PortainerConnector():
 
         debug('PortainerConnector init complete')
 
-    @property
     def get_name(self) -> str:
         return self.__container_name
 
