@@ -17,11 +17,13 @@ from crypto import sign_file, get_fingerprint
 
 # External
 import urllib.parse
-from flask import Blueprint, redirect, render_template, url_for, current_app, jsonify, request, abort, send_file, flash
+from flask import Blueprint, redirect, render_template, url_for, current_app, jsonify, request, abort, send_file, flash, has_request_context
 from flask_login import current_user, login_required
 from playhouse.shortcuts import model_to_dict
 import py7zr
 import hashlib
+
+# TODO: This blueprint is way too cluttered, move most of the backup logic to a separate file
 
 @dataclass
 class BackupStatus:
@@ -123,6 +125,11 @@ status_message_schema = {
 
 AutobackupController = Blueprint("AutobackupController", __name__)
 
+# Tiny hack that allows us to call the backup_start route function in the automatically sheduled task, bypassing login
+@AutobackupController.record_once
+def setup_backup_route(setup_state):
+    setup_state.app.add_url_rule('/backup/start', view_func=login_required(backup))
+
 def finish_backup():
     if Backup.get_or_none(Backup.is_finished == False) is None:
         # Don't think that this can actually happen but it's better to handle it regardless
@@ -180,13 +187,14 @@ def backup_index():
     last_backup = Backup.select().order_by(Backup.date.desc()).first()
     interval = current_app.config.get("BACKUP", {}).get("BACKUP_INTERVAL")
     if interval is not None and last_backup is not None:
-        next_backup = last_backup.date + timedelta(seconds=interval)
+        next_backup = (last_backup.date + timedelta(seconds=interval)).strftime("%d.%m.%Y")
+        last_backup = last_backup.date.strftime("%d.%m.%Y")
     else:
-        next_backup = 'N/A'
+        last_backup = next_backup = 'N/A'
     return render_template('backups/backup_index.j2', wikis=Wiki.select().where(Wiki.is_active==True),\
                             backups=Backup.select().order_by(Backup.date.desc()).prefetch(User),
-                            last_backup=last_backup.date.strftime("%d.%m.%Y"),
-                            next_backup=next_backup.strftime("%d.%m.%Y"))
+                            last_backup=last_backup,
+                            next_backup=next_backup)
 
 @AutobackupController.route('/backup/<int:backup_id>/delete')
 @login_required
@@ -229,7 +237,6 @@ def backup_status():
         tag = message['tag']
         message_type = MessageType(message['type'])
         current_message = Message(message_type, tag)
-        print(current_message)
     except Exception as e:
         error(f"Received invalid status message")
         error(str(e))
@@ -329,9 +336,14 @@ def backup_config():
         error(f"Config couldn't be updated: {str(e)}")
         return f"Konfiguraci nelze uložit ({str(e)})", 400
 
-@AutobackupController.route('/backup/start', methods=["GET"])
-@login_required
-def run_backup():
+def backup():
+    if Backup.get_or_none(Backup.is_finished == False) is not None:
+        if has_request_context():
+            # We want to flash the message to the user starting the backup
+            # But if the backup is automatically scheduled, there is no user and no session to flash to
+            flash("Backup is already running!")
+        return redirect(url_for('AutobackupController.backup_index'))
+
     # Check that we know how to start the backup
     start_method = current_app.config.get('BACKUP', {}).get('WIKICOMMA_START_METHOD')
     if start_method not in ['container', 'command']:
@@ -372,7 +384,8 @@ def run_backup():
 
     # Save to the database
     backup = Backup()
-    backup.author = current_user
+    if current_user:
+        backup.author = current_user
     backup.date = datetime.now()
     backup.is_finished = False
     backup.save()
@@ -401,3 +414,4 @@ def run_backup():
 
     info('WikiComma started')
     return "Záloha byla spuštěna"
+

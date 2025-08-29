@@ -91,7 +91,11 @@
         {% for backup in backups %}
         <tr>
             <td>{{backup.date.strftime("%Y-%m-%d")}}</td>
-            <td><a href="{{ url_for('UserController.user', uid=backup.author.id) }}" class="underline transition-all decoration-white/50 hover:text-blue-400">Cheems</a></td>
+            {% if backup.author is not none %}
+            <td><a href="{{ url_for('UserController.user', uid=backup.author.id) }}" class="underline transition-all decoration-white/50 hover:text-blue-400">{{backup.author.nickname}}</a></td>
+            {% else %}
+            <td><span class="text-green-600">SYSTEM</span></td>
+            {% endif %}
             <td>{{backup.sha1 or "N/A"}}</td>
             <td>
                 {% if backup.is_finished %}

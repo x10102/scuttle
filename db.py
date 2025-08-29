@@ -113,7 +113,7 @@ class Backup(BaseModel):
     id = AutoField()
     date = TimestampField()
     article_count = IntegerField(null=True)
-    author = ForeignKeyField(User, backref="author")
+    author = ForeignKeyField(User, backref="author", null=True)
     fingerprint = CharField(16, null=True)
     sha1 = CharField(48, null=True, unique=True)
     is_finished = BooleanField(default=False)
