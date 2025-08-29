@@ -57,7 +57,7 @@ def add_article(uid):
     is_original = bool(request.args.get('original', False))
 
     if Article.select().where(Article.name == title).exists():
-        flash('Překlad již existuje!')
+        flash(f'Překlad již existuje! (od uživatele {Article.get(Article.name == title).author.nickname})')
         return redirect(url_for('ArticleController.add_article', uid=uid))
     
     if current_app.config['WEBHOOK_ENABLE'] and not is_original:
