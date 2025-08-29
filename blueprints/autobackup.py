@@ -165,7 +165,7 @@ def finish_backup():
         with open(archive+'.asc', 'w') as sig_file:
             sig_file.write(str(signature))
 
-    backup_done_message = f"```Záloha dokončena v {datetime.now().strftime("%H:%M:%S %d-%m-%y")}:\n\n"
+    backup_done_message = f"```Záloha dokončena v {datetime.now().strftime('%H:%M:%S %d-%m-%y')}:\n\n"
     for wiki in statuses.values():
         status = wiki.status
         backup_done_message += f"{status.wiki_tag}\nZálohováno {status.finished_articles} z {status.total_articles} článků\n"
