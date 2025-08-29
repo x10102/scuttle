@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY requirements.txt /app
 
-RUN apk add --no-cache gcc p3-dev musl-dev linux-headers
+RUN apk add --no-cache gcc python3-dev musl-dev linux-headers
 
 RUN pip install --no-cache-dir -r requirements.txt
 
