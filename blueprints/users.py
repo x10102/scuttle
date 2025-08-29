@@ -38,7 +38,6 @@ def add_user():
         return redirect(url_for('UserController.add_user'))
 
     # Fetch nickname and profile in background
-    # !TODO: This is now broken because of discord client class rewrite
     sched.add_job('Immediate nickname update', lambda: discord_tasks.update_nicknames_task(override_users=[user]))
     sched.add_job('Immediate profile update', lambda: discord_tasks.download_avatars_task(override_ids=[form.discord.data]))
     
