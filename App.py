@@ -35,6 +35,7 @@ from blueprints.autobackup import AutobackupController
 from blueprints.embed import EmbedController
 
 from extensions import login_manager, sched, oauth, rss, webhook, portainer
+from constants import APP_VERSION
 
 app = Flask(__name__)
 
@@ -174,6 +175,7 @@ if __name__ == '__main__':
     app.add_template_global(get_role_color)
     app.add_template_global(current_user, 'current_user')
     app.add_template_global(RSSUpdateType)
+    app.add_template_global(APP_VERSION, 'APP_VERSION')
     
     # Load all the blueprints
     app.register_blueprint(ErrorHandler)
