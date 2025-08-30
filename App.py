@@ -129,7 +129,7 @@ def extensions_init() -> None:
         warning('Discord API token not set. Profiles won\'t be updated!')
 
     if app.config.get('BACKUP', {}).get('BACKUP_INTERVAL') is not None:
-        sched.add_job('autobackup_run', lambda: backup_task.run_backup_task(app.config['BACKUP']['BACKUP_INTERVAL'], app), trigger='interval', minutes=1)
+        sched.add_job('autobackup_run', lambda: backup_task.run_backup_task(app.config['BACKUP']['BACKUP_INTERVAL'], app), trigger='interval', hours=12)
 
     # Checking if we have a webhook URL
     webhook_url = app.config.get('DISCORD_WEBHOOK_URL', None)
