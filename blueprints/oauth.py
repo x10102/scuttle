@@ -32,6 +32,7 @@ def oauth_callback():
     if not user.can_login:
         warning(f'Login attempt by unauthorized user {user.nickname} from {request.remote_addr}')
         flash('Přihlášení je povolené pouze moderátorům')
+        return redirect(url_for('UserAuth.login'))
 
     login_user(user)
     info(f'User {user.nickname} (ID: {user.id}) logged in using Oauth (Authorized as {user_id})')
