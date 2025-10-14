@@ -167,6 +167,7 @@ function statusMessage(status) {
 }
 
 let updateIntervalId = 0;
+let finishedWikiCount = 0;
 
 function updateStatus() {
   fetch('/backup/status').then(response => response.json()).then(data => {
@@ -201,7 +202,9 @@ function updateStatus() {
         case MessageType.ErrorFatal: messageStrings.push(`[${msg.tag}] Kritická chyba: ${msg.error_message}`); break;
         case MessageType.FinishSuccess:
           messageStrings.push(`[${msg.tag}] Záloha dokončena, zpracovávám data`);
-          clearInterval(updateIntervalId);
+          if(++finishedWikiCount === data.length) {
+            clearInterval(updateIntervalId);
+          }
           break;
       }
     })
@@ -222,6 +225,7 @@ function logMessage(message) {
 }
 
 async function start_backup() {
+    finishedWikiCount = 0;
     updateIntervalId = setInterval(updateStatus, 2000);
     $('#status-text').text('Záloha spuštěna');
     let response = await fetch('/backup/start')

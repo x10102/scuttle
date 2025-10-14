@@ -131,6 +131,7 @@ def setup_backup_route(setup_state):
     setup_state.app.add_url_rule('/backup/start', view_func=login_required(backup))
 
 def finish_backup():
+    global statuses
     if Backup.get_or_none(Backup.is_finished == False) is None:
         # Don't think that this can actually happen but it's better to handle it regardless
         warning("No backups to finish!")
@@ -178,7 +179,7 @@ def finish_backup():
     backup_done_message += f"Kontrolní součet archivu je {hash}\n\n"
     backup_done_message += "Administrace Záznamů a Informační Bezpečnosti vám přeje hezký den!```" # Be polite :3
     webhook.send_text(backup_done_message)
-    statuses.clear()
+    statuses = {}
     Backup.update(is_finished=True).where(Backup.is_finished == False).execute()
 
 @AutobackupController.route('/backups', methods=["GET"])
@@ -202,6 +203,9 @@ def backup_delete(backup_id: int):
     # TODO: 2FA
     info(f"Backup ID {backup_id} deleted by user {current_user.nickname} (ID: {current_user.id})")
     Backup.delete_by_id(backup_id)
+    # TODO: Delete the actual archive
+    # (Maybe schedule a task to purge deleted backups after some time to allow time for restore?)
+    # Also add a confirmation dialog
     return redirect(url_for('AutobackupController.backup_index'))
 
 @AutobackupController.route('/backup/<int:backup_id>/download')
@@ -277,6 +281,8 @@ def backup_status():
                 statuses[tag].status.status = Status.Done
                 statuses[tag].status.messages.append(current_message)
             if all([w.status.status == Status.Done for w in statuses.values()]):
+                # TODO: This does not run after the first backup is done? Only fixed by a restart
+                # Makes no sense since the dict is cleared in the finish_backup function
                 info(f"Backup finished")
                 finish_backup()
         case _:
