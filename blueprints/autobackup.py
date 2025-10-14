@@ -131,7 +131,6 @@ def setup_backup_route(setup_state):
     setup_state.app.add_url_rule('/backup/start', view_func=login_required(backup))
 
 def finish_backup():
-    global statuses
     if Backup.get_or_none(Backup.is_finished == False) is None:
         # Don't think that this can actually happen but it's better to handle it regardless
         warning("No backups to finish!")
@@ -179,7 +178,7 @@ def finish_backup():
     backup_done_message += f"Kontrolní součet archivu je {hash}\n\n"
     backup_done_message += "Administrace Záznamů a Informační Bezpečnosti vám přeje hezký den!```" # Be polite :3
     webhook.send_text(backup_done_message)
-    statuses = {}
+    statuses.clear()
     Backup.update(is_finished=True).where(Backup.is_finished == False).execute()
 
 @AutobackupController.route('/backups', methods=["GET"])
@@ -259,7 +258,8 @@ def backup_status():
                 if backup_phase == Status.PagesMain:
                     statuses[tag].status.finished_articles = message['done']
                     statuses[tag].status.postponed_articles = message['postponed']
-                statuses[tag].status.status = backup_phase
+                if statuses[tag].status.status != Status.Done:
+                    statuses[tag].status.status = backup_phase
                 current_message.status = backup_phase
                 statuses[tag].status.messages.append(current_message)
         case MessageType.ErrorFatal:
@@ -280,6 +280,8 @@ def backup_status():
             with statuses[tag].mutex:
                 statuses[tag].status.status = Status.Done
                 statuses[tag].status.messages.append(current_message)
+            # for w in list(statuses.values()):
+            #    debug(f"Tag: {w.status.wiki_tag}; Status: {w.status.status}; Finished: {w.status.finished_articles}; Total: {w.status.total_articles}; Errors: {w.status.total_errors}; Last message: {w.status.messages[-1]}")
             if all([w.status.status == Status.Done for w in statuses.values()]):
                 # TODO: This does not run after the first backup is done? Only fixed by a restart
                 # Makes no sense since the dict is cleared in the finish_backup function
