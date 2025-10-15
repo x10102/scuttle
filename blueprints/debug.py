@@ -66,6 +66,7 @@ def raise_error():
     abort(HTTPStatus.INTERNAL_SERVER_ERROR)
 
 @DebugTools.route('/debug/export_pubkey')
+@login_required
 def export_pubkey():
     info(f"Public key exported by user {current_user.nickname}")
     return send_from_directory(os.path.join(os.getcwd(), 'data', 'crypto'), 'scuttle.pub.asc', as_attachment=True)
