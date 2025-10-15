@@ -15,6 +15,26 @@ CDN_URL = "https://cdn.discordapp.com"
 
 RATELIMIT_RETRIES = 3
 
+class DiscordWebhookMessage():
+    text_content: str
+    pings: t.List[int]
+
+    def _build_text_content(self) -> str:
+        content = ""
+        for p in self.pings:
+            content += f"<@{p}> "
+        content += self.text_content
+        return content
+
+    def add_ping(self, user_id: int):
+        self.pings.append(user_id)
+
+    def to_json(self) -> dict:
+        return {"content": self._build_text_content()}
+
+class DiscordWebhookException(RuntimeError):
+    pass
+
 class DiscordException(Exception):
     pass
 
@@ -69,16 +89,13 @@ class DiscordClient():
 
     @staticmethod
     def get_global_username(uid: int) -> t.Optional[str]:
-        """Fetches the global nickname, if the user doesn't have any set, returns the username
+        """
+        Fetches the global nickname, if the user doesn't have any set, returns the username
 
-        Args:
-            uid (int): The user's Discord ID
-
-        Raises:
-            DiscordException: Raised when either of the API requests fails
-
-        Returns:
-            str | None - The nickname / username. None is returned if the request succeeds but some other unexpected error occurs
+        :param int uid: The user's Discord ID
+        :raises DiscordException: When either of the API requests fails
+        :return: The nickname / username. None is returned if the request succeeds but some other unexpected error occurs
+        :rtype: Optional[str]
         """
         
         try:
@@ -93,17 +110,14 @@ class DiscordClient():
 
     @staticmethod
     def get_avatar(uid: int, size = 256) -> bytes:
-        """Fetches the avatar of a user from Discord's CDN. Results are cached for 6 hours.
+        """
+        Fetches the avatar of a user from Discord's CDN. Results are cached for 6 hours.
 
-        Args:
-            uid (int): The user's Discord ID
-            size (int): The avatar's size, defaults to 512 px
-
-        Raises:
-            DiscordException: Raised when either of the API requests fails
-
-        Returns:
-            bytes: A bytes object containing the user's avatar in PNG format
+        :param int uid: The user's Discord ID
+        :param int size: The avatar's size, defaults to 512 px
+        :raises DiscordException: When either of the API requests fails
+        :return: The user's avatar in PNG format
+        :rtype: bytes
         """
         try:
             user = DiscordClient._get_user(uid)
@@ -143,13 +157,14 @@ class DiscordWebhook():
         self.url = url
         self.notify = notify
 
+    
     def init_app(self, app):
         self.url = app.config['DISCORD_WEBHOOK_URL']
         self.notify = app.config['DISCORD_ROLEMASTER_ID']
 
     def send_text(self, message: str, ping_user: int = 0) -> None:
         if not self.url:
-            raise RuntimeError('Cannot send an uninitialized webhook (no URL specified)')
+            raise DiscordWebhookException('Cannot send an uninitialized webhook (no URL specified)')
         if current_app.config['DEBUG'] == True:
             message = f"[TESTOVACÍ REŽIM - PROSÍM IGNORUJTE] {message}"
         if len(message) > 2000:
@@ -161,6 +176,15 @@ class DiscordWebhook():
         else:
             data = {"content": message}
         info('Sending webhook')
+        try:
+            webhook_response = requests.post(self.url, json=data)
+        except Exception as e:
+            error(f'Webhook failed to send ({str(e)})')
+
+    def _send_json(self, data: dict):
+        if not self.url:
+            raise DiscordWebhookException('Cannot send an uninitialized webhook (no URL specified)')
+        info("Sending JSON webhook")
         try:
             webhook_response = requests.post(self.url, json=data)
         except Exception as e:
