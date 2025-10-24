@@ -39,7 +39,7 @@ def add_user():
 
     # Fetch nickname and profile in background
     sched.add_job('Immediate nickname update', lambda: discord_tasks.update_nicknames_task(override_users=[user]))
-    sched.add_job('Immediate profile update', lambda: discord_tasks.download_avatars_task(override_ids=[form.discord.data]))
+    sched.add_job('Immediate profile update', lambda: discord_tasks.download_avatars_task(override_users=[user]))
     
     if form.can_login.data:
         session['tpw'] = temp_password
