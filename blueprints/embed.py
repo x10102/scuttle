@@ -37,7 +37,7 @@ def get_template(template_type: EmbedType, theme: str = "default"):
 @EmbedController.route('/user/<int:uid>/embed', methods=["GET"])
 def user_badge(uid: int):
     embed_type = request.args.get("type", type=str, default=EmbedType.TRANSLATOR)
-    if embed_type not in list(EmbedType): abort(HTTPStatus.BAD_REQUEST) # Abort on invalid type
+    if embed_type not in list(EmbedType): embed_type = EmbedType.TRANSLATOR # Default to translator
     embed_theme = request.args.get("theme", type=str, default="default")
     user = User.get_or_none(User.id == uid) or abort(HTTPStatus.NOT_FOUND)
     stats = user.stats.first()
