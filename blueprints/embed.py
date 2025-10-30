@@ -34,12 +34,25 @@ def get_template(template_type: EmbedType, theme: str = "default"):
         # Don't abort on invalid theme, just use the default
         return f"embeds/{template_type}/default.j2"
 
+def generate_badge(user: User, theme: str = "default", type: str = "translator") -> str:
+    if type not in list(EmbedType):
+        type = EmbedType.TRANSLATOR
+    else:
+        type = EmbedType(type)
+    stats = user.stats.first()
+    last = user.articles.where(Article.is_original == (type != EmbedType.TRANSLATOR)).order_by(Article.added.desc()).first()
+    return render_template(get_template(type, theme), user=user, stats=stats, last=last)
+
 @EmbedController.route('/user/<int:uid>/embed', methods=["GET"])
 def user_badge(uid: int):
     embed_type = request.args.get("type", type=str, default=EmbedType.TRANSLATOR)
-    if embed_type not in list(EmbedType): embed_type = EmbedType.TRANSLATOR # Default to translator
     embed_theme = request.args.get("theme", type=str, default="default")
     user = User.get_or_none(User.id == uid) or abort(HTTPStatus.NOT_FOUND)
-    stats = user.stats.first()
-    last = user.articles.where(Article.is_original == (embed_type != EmbedType.TRANSLATOR)).order_by(Article.added.desc()).first()
-    return render_template(get_template(embed_type, embed_theme), user=user, stats=stats, last=last)
+    return generate_badge(user, embed_theme, embed_type)
+
+@EmbedController.route('/embed/by-wikidot/<str:username>', methods=['GET'])
+def user_badge_by_wikidot(username: str):
+    embed_type = request.args.get("type", type=str, default=EmbedType.TRANSLATOR)
+    embed_theme = request.args.get("theme", type=str, default="default")
+    user = User.get_or_none(User.wikidot == username) or abort(HTTPStatus.NOT_FOUND)
+    return generate_badge(user, embed_theme, embed_type)
