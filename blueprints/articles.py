@@ -32,7 +32,7 @@ def notify_rolemaster(uid, point_amount):
 def delete_article(aid: int):
     article = Article.get_or_none(Article.id == aid) or abort(HTTPStatus.NOT_FOUND)
     article.delete_instance()
-    info(f"Article {article.name} deleted by {current_user.nickname} (ID: {current_user.uid})")
+    info(f"Article {article.name} deleted by {current_user.nickname} (ID: {current_user.get_id()})")
     flash(f'Článek {article.name} smazán')
     return "OK"
 

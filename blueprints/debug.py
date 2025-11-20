@@ -13,7 +13,7 @@ DebugTools = Blueprint('DebugTools', __name__)
 @DebugTools.before_request
 def log_debug_access():
     if not current_app.config['DEBUG'] and not current_user.is_anonymous:
-        warning(f'Debug endpoint {request.full_path} accessed by {current_user.nickname} (ID: {current_user.id})')
+        warning(f'Debug endpoint {request.full_path} accessed by {current_user.nickname} (ID: {current_user.get_id()})')
 
 @DebugTools.route('/debug/nickupdate')
 @login_required

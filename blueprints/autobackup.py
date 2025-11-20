@@ -200,7 +200,7 @@ def backup_index():
 @login_required
 def backup_delete(backup_id: int):
     # TODO: 2FA
-    info(f"Backup ID {backup_id} deleted by user {current_user.nickname} (ID: {current_user.id})")
+    info(f"Backup ID {backup_id} deleted by user {current_user.nickname} (ID: {current_user.get_id()})")
     Backup.delete_by_id(backup_id)
     # TODO: Delete the actual archive
     # (Maybe schedule a task to purge deleted backups after some time to allow time for restore?)
