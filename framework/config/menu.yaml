@@ -24,6 +24,11 @@ menu:
         icon: "bi-rss"
         auth: "authorized"
         handler: "RssPageController.rss_changes"
+    - backups:
+        text: "Zálohy"
+        icon: "bi-database"
+        auth: "authorized"
+        handler: "AutobackupController.backup_index"
     - leaderboard:
         text: "Přidat uživatele"
         icon: "bi-person-add"
