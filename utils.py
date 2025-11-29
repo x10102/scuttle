@@ -4,6 +4,8 @@ from secrets import token_hex
 
 import logging
 
+#TODO: Organize this into multiple files somehow
+
 DEFAULT_CONFIG = {
     "SECRET_KEY": token_hex(24),
     "DEBUG": False

@@ -8,9 +8,11 @@ from flask_login import LoginManager
 from flask_discord import DiscordOAuth2Session
 from connectors.rss import RSSMonitor
 from connectors.discord import DiscordWebhook
+from connectors.portainer import PortainerConnector
 
 sched = APScheduler()
 login_manager = LoginManager()
 oauth = DiscordOAuth2Session()
 rss = RSSMonitor()
 webhook = DiscordWebhook()
+portainer = PortainerConnector()

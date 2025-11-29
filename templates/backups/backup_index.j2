@@ -1,0 +1,114 @@
+{% extends "base.j2" %}
+
+{% block head %}
+<script src="{{url_for('static', filename='js/backup.js')}}" defer></script>
+{% endblock %}
+
+{% block content %}
+<h1 class="mt-2 text-4xl text-center">Zálohy</h1>
+<div class="flex flex-row w-3/4 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
+    <div class="flex flex-col">
+        <button class="w-32 glass-btn h-full" id="btn-start">Spustit zálohu</button>
+        <button class="w-32 glass-btn py-2 mt-1" id="btn-config">Konfigurace</button>
+    </div>
+    <div class="flex flex-col mx-3">
+        <span><b>Poslední záloha:</b> {{last_backup}}</span>
+        <span><b>Další automatická záloha:</b> {{next_backup}}</span>
+        {% for wiki in wikis %}
+        <span class="mt-2">
+            <h2 class="text-lg font-bold float-left">{{wiki.name}}</h2>
+            <p class="float-right opacity-50" id="{{wiki.name}}-count">N/A</p>
+        </span>
+        <div class="h-2 mt-1 w-full rounded-full bg-white/20">
+            <div class="h-full w-0 bg-white/80 rounded-full" id="{{wiki.name}}-progress"></div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="w-0 border-l border-white/30 mx-3"></div>
+    <div class="flex flex-col mx-3 flex-grow">
+        <span class="mb-1"><b>Status:</b> <span id="status-text">Čekám na spuštění</span></span>
+        <textarea class="h-full w-full border border-white/30 rounded-lg flex-grow bg-white/5 p-1 text-xs" readonly="true" id="log-area"></textarea>
+    </div>
+</div>
+
+<div class="flex flex-col w-3/4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20 hidden" id="config-container">
+  <h1 class="text-xl mb-2 border-r border-b border-white/20 rounded-br-xl w-fit p-3 inline-block">Konfigurace</h1>
+  <div class="inline-block">
+    <button class="mb-2 border rounded-full border-white/20 w-fit px-4 ml-2 inline-block hover:bg-white/10 transition-all" id="save-config">Uložit</button>
+    <p class="result-badge" id="save-result">Konfigurace úspěšně uložena</p>
+  </div>
+
+  <div class="m-4">
+  <div class="flex flex-row w-full gap-6">
+    <div class="flex flex-col flex-1 gap-4">
+      <div>
+        <h2 class="text-lg">HTTP Proxy</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="text" id="http-proxy">
+      </div>
+      <div>
+        <h2 class="text-lg">SOCKS Proxy</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="text" id="socks-proxy">
+      </div>
+      <div>
+        <h2 class="text-lg">Request delay</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="number" id="delay">
+      </div>
+      <div>
+        <h2 class="text-lg">Ratelimit size</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="number" id="rlimit-size">
+      </div>
+      <div>
+        <h2 class="text-lg">Ratelimit refill</h2>
+        <input class="bg-transparent border border-white/30 rounded-lg w-full p-1" type="number" id="rlimit-refill">
+      </div>
+    </div>
+    <div class="w-0 border-l border-white/30 mx-3"></div>
+    <div class="flex flex-col flex-1 gap-4">
+      <div>
+        <h2 class="text-lg">Wiki list</h2>
+        <textarea class="w-full border border-white/30 rounded-lg flex-grow bg-white/5 p-1 text-xs break-keep" rows="8" wrap="off" id="wikilist"></textarea>
+      </div>
+      <div>
+        <h2 class="text-lg">Blacklist</h2>
+        <textarea class="w-full border border-white/30 rounded-lg flex-grow bg-white/5 p-1 text-xs break-keep" rows="8" wrap="off" id="blacklist"></textarea>
+      </div>
+    </div>
+  </div>
+  </div>
+
+
+    
+</div>
+
+<div class="flex flex-col w-3/4 px-5 py-4 mx-auto mt-4 border rounded-md bg-white/5 backdrop-blur-sm border-white/20">
+    <table>
+        <tr>
+            <th>Datum zálohy</th>
+            <th>Vytvořil</th>
+            <th>SHA-1</th>
+            <th>Akce</th>
+        </tr>
+        {% for backup in backups %}
+        <tr>
+            <td>{{backup.date.strftime("%Y-%m-%d")}}</td>
+            {% if backup.author is not none %}
+            <td><a href="{{ url_for('UserController.user', uid=backup.author.id) }}" class="underline transition-all decoration-white/50 hover:text-blue-400">{{backup.author.nickname}}</a></td>
+            {% else %}
+            <td><span class="text-green-600">SYSTEM</span></td>
+            {% endif %}
+            <td>{{backup.sha1 or "N/A"}}</td>
+            <td>
+                {% if backup.is_finished %}
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="{{url_for('AutobackupController.backup_download', backup_id=backup.id)}}" title="Stáhnout"><i class="text-3xl transition-opacity bi bi-download opacity-40 hover:opacity-100"></i></a>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="{{url_for('AutobackupController.backup_download_sig', backup_id=backup.id)}}" title="Stáhnout podpis"><i class="text-3xl transition-opacity bi bi-key opacity-40 hover:opacity-100"></i></a>
+                <a class="inline-block w-full mx-1 mb-2 md:inline md:w-auto md:mb-0" href="{{url_for('AutobackupController.backup_delete', backup_id=backup.id)}}" title="Odstranit"><i class="text-3xl transition-opacity bi bi-trash opacity-40 hover:opacity-100"></i></a>
+                {% else %}
+                <div class="animate-pulse px-4 rounded-lg text-blue-500">Záloha probíhá</div>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock content %}

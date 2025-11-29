@@ -112,10 +112,31 @@ class UserHasType(BaseModel):
 class Backup(BaseModel):
     id = AutoField()
     date = TimestampField()
-    article_count = IntegerField()
-    author = ForeignKeyField(User, backref="author")
-    fingerprint = CharField(16)
-    sha1 = CharField(48)
+    article_count = IntegerField(null=True)
+    author = ForeignKeyField(User, backref="author", null=True)
+    fingerprint = CharField(16, null=True)
+    sha1 = CharField(48, null=True, unique=True)
+    is_finished = BooleanField(default=False)
+
+class Wiki(BaseModel):
+    id = AutoField()
+    url = TextField()
+    name = TextField()
+    total_artices = IntegerField(null=True)
+    is_active = BooleanField(default=True)
+
+class BackupHasWiki(BaseModel):
+    wiki = ForeignKeyField(Wiki)
+    backup = ForeignKeyField(Backup)
+
+class WikiCommaConfig(BaseModel):
+    id = AutoField()
+    http_proxy = TextField(null=True)
+    socks_proxy = TextField(null=True)
+    delay = IntegerField(null=True)
+    ratelimit_size = IntegerField(null=True)
+    ratelimit_refill = IntegerField(null=True)
+    blacklist = TextField(null=True)
 
 class Series(ViewModel):
     series = IntegerField()
@@ -157,7 +178,7 @@ class Frontpage(ViewModel):
     correction_count = IntegerField()
     original_count = IntegerField()
 
-models = [User, Article, Backup, Note, UserType, UserHasType]
+models = [User, Article, Backup, Note, UserType, UserHasType, Backup, Wiki, WikiCommaConfig, BackupHasWiki]
 
 def last_update() -> datetime.datetime:
     return Article.select(fn.MAX(Article.added)).scalar()
@@ -166,15 +187,15 @@ def get_frontpage(sort: str, page: int):
     entries = Frontpage.select().join(User).limit(PAGE_ITEMS).offset(PAGE_ITEMS*page)
     match sort:
         case 'az':
-            result = entries.order_by(User.nickname.collate("NOCASE").asc())
+            result = entries.order_by(User.nickname.collate("NOCASE").asc()).prefetch(User)
         case 'points':
-            result = entries.order_by(Frontpage.points.desc())
+            result = entries.order_by(Frontpage.points.desc()).prefetch(User)
         case 'count':
-            result = entries.order_by(Frontpage.translation_count.desc())
+            result = entries.order_by(Frontpage.translation_count.desc()).prefetch(User)
         case 'corrections':
-            result = entries.order_by(Frontpage.correction_count.desc())
+            result = entries.order_by(Frontpage.correction_count.desc()).prefetch(User)
         case 'originals':
-            result = entries.order_by(Frontpage.original_count.desc())
+            result = entries.order_by(Frontpage.original_count.desc()).prefetch(User)
         case _:
-            result = entries.order_by(Frontpage.points.desc())
+            result = entries.order_by(Frontpage.points.desc()).prefetch(User)
     return result

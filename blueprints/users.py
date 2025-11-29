@@ -3,10 +3,9 @@ from peewee import IntegrityError
 from flask import Blueprint, url_for, redirect, session, request, render_template, abort, flash
 from forms import NewUserForm, EditUserForm
 from flask_login import current_user, login_required
-from db import Correction, User, Article
+from db import User, Article
 from logging import info
-from connectors.discord import DiscordClient
-from passwords import pw_hash
+from crypto import pw_hash
 from tasks import discord_tasks
 from secrets import token_urlsafe
 
@@ -39,7 +38,6 @@ def add_user():
         return redirect(url_for('UserController.add_user'))
 
     # Fetch nickname and profile in background
-    # !TODO: This is now broken because of discord client class rewrite
     sched.add_job('Immediate nickname update', lambda: discord_tasks.update_nicknames_task(override_users=[user]))
     sched.add_job('Immediate profile update', lambda: discord_tasks.download_avatars_task(override_ids=[form.discord.data]))
     
@@ -79,8 +77,8 @@ def user(uid: int):
     user = User.get_or_none(User.id == uid) or abort(HTTPStatus.NOT_FOUND)
     corrections = list(user.corrections)
     # TODO: Extract constant
-    translations = list(user.articles.where(Article.is_original == False).order_by(Article.added.desc()).limit(15))
-    originals = list(user.articles.where(Article.is_original == True))
+    translations = list(user.articles.where(Article.is_original == False).order_by(Article.added.desc()).limit(15).prefetch(User))
+    originals = list(user.articles.where(Article.is_original == True).prefetch(User))
     return render_template('user.j2', user=user, stats=user.stats.first(), translations=translations, corrections=corrections, originals=originals, sort=sort)
 
 @UserController.route('/user/<int:uid>/delete', methods=["POST", "GET"])
@@ -89,7 +87,7 @@ def delete_user(uid: int):
     user = User.get_or_none(User.id == uid) or abort(HTTPStatus.NOT_FOUND)
     name = user.nickname
     user.delete_instance()
-    info(f"User {name} deleted by {current_user.nickname} (ID: {current_user.uid})")
+    info(f"User {name} deleted by {current_user.nickname} (ID: {current_user.get_id()})")
     flash(f'Uživatel {name} smazán')
     
     return redirect(url_for('index'))

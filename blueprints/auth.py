@@ -7,7 +7,7 @@ from forms import LoginForm, PasswordChangeForm
 from flask_login import login_user, login_required, logout_user
 
 # Internal
-from passwords import pw_check, pw_hash
+from crypto import pw_check, pw_hash
 from db import User
 
 # TODO: Move templates
@@ -36,7 +36,7 @@ def login():
         session['PRE_LOGIN_UID'] = user.id
         return redirect(url_for('UserAuth.pw_change'))
     login_user(user)
-    referrer = session['login_next']
+    referrer = session.get('login_next', None)
 
     del session['login_next']
     return redirect(referrer or url_for('index'))

@@ -24,7 +24,7 @@ def ignore_update():
     if not title:
         warning(f'Removing non-existent RSS Update with UUID {uuid}')
     else:
-        info(f'RSS Update {uuid} ({title}) ignored by {current_user.nickname} (ID: {current_user.uid})')
+        info(f'RSS Update {uuid} ({title}) ignored by {current_user.nickname} (ID: {current_user.get_id()})')
     return redirect(url_for('RssPageController.rss_changes'))
 
 @RssPageController.route('/changes/forceupdate')

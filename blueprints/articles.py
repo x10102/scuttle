@@ -32,7 +32,7 @@ def notify_rolemaster(uid, point_amount):
 def delete_article(aid: int):
     article = Article.get_or_none(Article.id == aid) or abort(HTTPStatus.NOT_FOUND)
     article.delete_instance()
-    info(f"Article {article.name} deleted by {current_user.nickname} (ID: {current_user.uid})")
+    info(f"Article {article.name} deleted by {current_user.nickname} (ID: {current_user.get_id()})")
     flash(f'Článek {article.name} smazán')
     return "OK"
 
@@ -57,7 +57,7 @@ def add_article(uid):
     is_original = bool(request.args.get('original', False))
 
     if Article.select().where(Article.name == title).exists():
-        flash('Překlad již existuje!')
+        flash(f'Překlad již existuje! (od uživatele {Article.get(Article.name == title).author.nickname})')
         return redirect(url_for('ArticleController.add_article', uid=uid))
     
     if current_app.config['WEBHOOK_ENABLE'] and not is_original:
