@@ -87,7 +87,7 @@ def delete_user(uid: int):
     user = User.get_or_none(User.id == uid) or abort(HTTPStatus.NOT_FOUND)
     name = user.nickname
     user.delete_instance()
-    info(f"User {name} deleted by {current_user.nickname} (ID: {current_user.uid})")
+    info(f"User {name} deleted by {current_user.nickname} (ID: {current_user.get_id()})")
     flash(f'Uživatel {name} smazán')
     
     return redirect(url_for('index'))

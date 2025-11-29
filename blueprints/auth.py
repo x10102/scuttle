@@ -36,7 +36,7 @@ def login():
         session['PRE_LOGIN_UID'] = user.id
         return redirect(url_for('UserAuth.pw_change'))
     login_user(user)
-    referrer = session['login_next']
+    referrer = session.get('login_next', None)
 
     del session['login_next']
     return redirect(referrer or url_for('index'))
