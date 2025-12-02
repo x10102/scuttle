@@ -1,0 +1,5 @@
+{% if override_classes %}
+  <div class="{{classes}}">{{name}}</div>
+{% else %}
+  <div class="bg-opacity-70 text-sm font-italic py-1 px-1 {{classes}} rounded-full shadow-lg">{{name}}</div>
+{% endif %}

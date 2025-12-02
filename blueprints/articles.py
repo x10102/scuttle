@@ -9,7 +9,7 @@ from flask_login import current_user, login_required
 
 # Internal
 from forms import NewArticleForm, EditArticleForm, AssignCorrectionForm
-from utils import get_user_role
+from framework.roles import get_role
 from extensions import rss, webhook
 from db import User, Article
 
@@ -21,8 +21,8 @@ def notify_rolemaster(uid, point_amount):
         error(f"How the fuck does this even happen? (Sending promote notify for a nonexistent user {uid})")
         return
     current_points = promoted_user.stats.first().points
-    current_role = get_user_role(current_points)
-    next_role = get_user_role(current_points + point_amount)
+    current_role = get_role(current_points)
+    next_role = get_role(current_points + point_amount)
     if current_role != next_role:
         if promoted_user.discord:
             webhook.send_text(f'Uživatel {promoted_user.nickname} (<@{promoted_user.discord}>) dosáhl hranice pro roli {next_role}!')

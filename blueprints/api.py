@@ -4,10 +4,10 @@ from flask_login import current_user, login_required
 from datetime import datetime
 
 from db import Article, User, Frontpage, Correction
+from framework.roles import role_badge
 
 ApiController = Blueprint('ApiController', __name__)
 
-#TODO: Extract constant
 PAGE_ITEMS = 15
 
 def result_ok(result = [], extra_data = {}):
@@ -95,6 +95,8 @@ def search_user():
             'wikidot': u.user.wikidot,
             'displayname': u.user.display_name,
             'tr_count': u.translation_count,
+            'cr_count': u.correction_count,
+            'tr_role_html': role_badge(u.points),
             'points': u.points} for u in user]
     return result_ok(results)
 

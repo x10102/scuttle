@@ -3,7 +3,7 @@ from connectors.discord import DiscordClient, DiscordException
 from db import User
 from PIL import Image
 from io import BytesIO
-from logging import warning
+from logging import warning, error, debug
 from os.path import join
 from typing import List, Optional
 import time
@@ -24,16 +24,25 @@ def update_nicknames_task(override_users: Optional[List[User]] = None):
             user.save()
         time.sleep(0.2) # Wait a bit so the API doesn't 429
 
-def download_avatars_task(path: str | PathLike = './temp/avatar', override_ids: Optional[List[str]]  = None):
-    ids = override_ids or [d[0] for d in User.select(User.discord).tuples()]
-    for user in ids:
-        if user is None or not DiscordClient._validate_user_id(user):
-            warning(f"Skipping profile update for {user} (Empty or invalid Discord ID)")
-            continue
-        avatar = DiscordClient.get_avatar(user)
-        if avatar is not None:
-            with open(join(path,f'{user}.png'), 'wb') as file:
-                file.write(avatar)
-                Image.open(BytesIO(avatar)).resize((64, 64), Image.Resampling.NEAREST).save(join(path,f'{user}_thumb.png')) # Create a 64x64 thumnail and save it as [ID]_thumb.png
+def download_avatars_task(path: str | PathLike = './temp/avatar', override_users: Optional[List[User]] = None):
+    users = override_users or list(User.select(User.discord, User.avatar_hash, User.nickname, User.id).where(User.discord.is_null(False)))
 
-            time.sleep(0.1) # Wait for a bit so we don't hit the rate limit
+    for user in users:
+        discord_data = DiscordClient.get_user(user.discord)
+        if not discord_data:
+            warning(f"Skipping avatar update for {user.nickname} ({user.discord}) (Couldn't fetch API data)")
+            continue
+        # Check that the avatar hashes are different before downloading the avatar
+        if user.avatar_hash is None or user.avatar_hash != discord_data['avatar']:
+            User.update(avatar_hash=discord_data['avatar']).where(User.id == user.id).execute()
+            avatar = DiscordClient.get_avatar(user.discord)
+            if avatar is not None:
+                with open(join(path,f'{user}.png'), 'wb') as file:
+                    file.write(avatar)
+                    Image.open(BytesIO(avatar)).resize((64, 64), Image.Resampling.NEAREST).save(join(path,f'{user}_thumb.png')) # Create a 64x64 thumnail and save it as [ID]_thumb.png
+
+                time.sleep(0.5) # Wait for a bit so we don't hit the rate limit
+            else:
+                error(f"Avatar download failed for {user.nickname} ({user.discord})")
+        else:
+            debug(f"Skipping avatar update for {user.discord} (Avatar hashes match)")

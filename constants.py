@@ -1,2 +1,2 @@
-APP_VERSION = "1.1.2"
+APP_VERSION = "2.0.1"
 BRANCH_ID = "CS"
