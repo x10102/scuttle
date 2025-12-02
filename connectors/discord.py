@@ -45,7 +45,7 @@ class DiscordClient():
         return True
     
     @staticmethod
-    def _get_user(uid: int) -> t.Optional[dict]:
+    def get_user(uid: int) -> t.Optional[dict]:
         
         retry = 0
         while retry < RATELIMIT_RETRIES:
@@ -82,7 +82,7 @@ class DiscordClient():
         """
         
         try:
-            user = DiscordClient._get_user(uid)
+            user = DiscordClient.get_user(uid)
         except DiscordException as e:
             raise e
         if user is None:
@@ -106,7 +106,7 @@ class DiscordClient():
             bytes: A bytes object containing the user's avatar in PNG format
         """
         try:
-            user = DiscordClient._get_user(uid)
+            user = DiscordClient.get_user(uid)
         except DiscordException as e:
             raise e
 

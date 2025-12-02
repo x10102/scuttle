@@ -4,7 +4,6 @@ from flask_login import UserMixin
 
 database = SqliteDatabase("data/scp.db")
 
-# TODO: Extract constant
 PAGE_ITEMS = 15
 
 class BaseModel(Model):
@@ -12,7 +11,7 @@ class BaseModel(Model):
         database = database
 
 class ViewModel(BaseModel):
-    def save():
+    def save(self):
         raise RuntimeError("Attempted to insert into an SQL View")
     
     class Meta:
@@ -27,6 +26,7 @@ class User(BaseModel, UserMixin):
     password = BlobField(null=True)
     temp_pw = BooleanField(default=True, null=True)
     wikidot = TextField(unique=True)
+    avatar_hash = TextField(default=True, null=True)
 
     @property
     def can_login(self) -> bool:
