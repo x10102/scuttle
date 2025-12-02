@@ -36,7 +36,7 @@ def get_role(points, type='translator'):
     role_type = role_cache[type]
     if points < role_type['min_points']: return role_type['no_role']
     for role in role_type['roles']:
-        if role['point_limit'] < points:
+        if role['point_limit'] <= points:
             return role
 
 # Caching to not use unnecessary I/O

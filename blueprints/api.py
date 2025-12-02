@@ -4,10 +4,10 @@ from flask_login import current_user, login_required
 from datetime import datetime
 
 from db import Article, User, Frontpage, Correction
+from framework.roles import role_badge
 
 ApiController = Blueprint('ApiController', __name__)
 
-#TODO: Extract constant
 PAGE_ITEMS = 15
 
 def result_ok(result = [], extra_data = {}):
@@ -179,3 +179,14 @@ def remove_correction(aid: int):
     article.save()
     flash('Korekce odstraněna')
     return result_ok()
+
+@ApiController.route('/api/roles/badge', methods=['GET'])
+def get_role_badge():
+    try:
+        points = request.args.get("points", type=float)
+    except ValueError:
+        return result_error("Invalid request (points value not a float)")
+    if not points:
+        return result_error("Invalid request (points value not specified)")
+    role_type = request.args.get("type", default="translator")
+    return result_ok(role_badge(points, role_type))
