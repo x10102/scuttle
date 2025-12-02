@@ -1,11 +1,11 @@
 from logging import critical, info
-from .framework import render_template_file
+from .framework import render_template_file, FrameworkError
 import yaml
 import time
 import os
 
 # Returns an HTML string containing the app's sidebar menu
-# The menu is rendered on first call and cached indefinitely
+# The menu is rendered on first call and cached until app restart
 def navigation_menu(authorized: bool = False):
     # Check if we already built the menu
     if hasattr(navigation_menu, '_cache'):
@@ -20,7 +20,7 @@ def navigation_menu(authorized: bool = False):
             menu_config = yaml.safe_load(menufile)
     except Exception as e:
         critical(f"Framework error: failed to render menu ({str(e)})")
-        raise e
+        raise FrameworkError(f"Failed to render menu ({str(e)})")
 
     # Create the cache attribute on this function
     navigation_menu._cache = ["", ""]

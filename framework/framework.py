@@ -6,6 +6,9 @@ from jinja2.exceptions import TemplateError
 from werkzeug.routing import BuildError
 from flask import current_app
 
+class FrameworkError(RuntimeError):
+    pass
+
 def render_template_file(file: str | bytes | os.PathLike, **context: Any) -> str | None:
     try:
         with open(file, 'r', encoding="utf-8") as template:
