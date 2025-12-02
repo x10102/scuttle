@@ -96,6 +96,7 @@ def search_user():
             'displayname': u.user.display_name,
             'tr_count': u.translation_count,
             'cr_count': u.correction_count,
+            'tr_role_html': role_badge(u.points),
             'points': u.points} for u in user]
     return result_ok(results)
 
@@ -180,14 +181,3 @@ def remove_correction(aid: int):
     article.save()
     flash('Korekce odstraněna')
     return result_ok()
-
-@ApiController.route('/api/roles/badge', methods=['GET'])
-def get_role_badge():
-    try:
-        points = request.args.get("points", type=float)
-    except ValueError:
-        return result_error("Invalid request (points value not a float)")
-    if not points:
-        return result_error("Invalid request (points value not specified)")
-    role_type = request.args.get("type", default="translator")
-    return result_ok(role_badge(points, role_type))
