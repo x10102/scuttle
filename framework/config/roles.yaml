@@ -1,5 +1,9 @@
-
 translator:
+  min_points: 5
+  no_role: 
+    name: "Žádná"
+    point_limit: 0
+    badge_css: ""
   roles:
     - translator1:
       name: "Překladatel I"
