@@ -4,11 +4,7 @@ const originalTable = table.innerHTML
 let isOriginal = true
 let timeoutID = 0
 
-async function fetchRole(point_count) {
-    const role = await fetch(`/api/roles/badge?` + new URLSearchParams({points: point_count, type: 'translator'})).then(response => response.json()).result
-}
-
-async function makeRow(user) {
+function makeRow(user) {
     const discordBlock = user.discord ? `<img class="w-8 h-8 rounded-[50%] inline md:mr-4" src="/content/avatar/${user.discord}?s=thumb"> ${user.displayname ?? user.discord}` : user.displayname ?? user.discord
     return `<tr class="h-10 md:p-4 usr-row" id="u-${user.id}">
             <td data-label="Přezdívka">${user.nickname}</td>
@@ -16,7 +12,7 @@ async function makeRow(user) {
             <td data-label="Počet překladů">${user.tr_count}</td>
             <td data-label="Počet korekcí">${user.cr_count}</td>
             <td data-label="Počet bodů">${user.points.toFixed(1)}</td>
-            <td data-label="Role">${fetchRole(user.points)}</td>
+            <td data-label="Role">${user.tr_role_html}</td>
             <td class="flex flex-col md:table-row"><a class="inline-block w-full mb-2 md:inline md:w-auto md:mb-0" href="/user/${user.id}"><i class="text-3xl transition-opacity bi bi-eye opacity-40 hover:opacity-100"></i></a></td>
         </tr>`
 }
@@ -37,7 +33,7 @@ function search(query) {
         'q': query
     }))
     .then(response => response.json())
-    .then(r => r.result.forEach(async user => {newHtml += await makeRow(user)}))
+    .then(r => r.result.forEach(user => {newHtml += makeRow(user)}))
     .then(() => table.innerHTML = newHtml)
 
 }
