@@ -95,6 +95,7 @@ def search_user():
             'wikidot': u.user.wikidot,
             'displayname': u.user.display_name,
             'tr_count': u.translation_count,
+            'cr_count': u.correction_count,
             'points': u.points} for u in user]
     return result_ok(results)
 

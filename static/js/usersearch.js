@@ -32,6 +32,7 @@ function makeRow(user) {
             <td data-label="Přezdívka">${user.nickname}</td>
             <td data-label="Discord ID">${discordBlock}</td>
             <td data-label="Počet překladů">${user.tr_count}</td>
+            <td data-label="Počet korekcí">${user.cr_count}</td>
             <td data-label="Počet bodů">${user.points.toFixed(1)}</td>
             <td data-label="Role">${getRole(user.points)}</td>
             <td class="flex flex-col md:table-row"><a class="inline-block w-full mb-2 md:inline md:w-auto md:mb-0" href="/user/${user.id}"><i class="text-3xl transition-opacity bi bi-eye opacity-40 hover:opacity-100"></i></a></td>
