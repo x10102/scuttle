@@ -15,6 +15,9 @@ def pw_hash(pw: str) -> bytes:
     return hashpw(enc, salt)
 
 def pw_check(pw1: str, pw2: bytes):
+    if pw1 is None or pw2 is None:
+            warning("Checking an empty password")
+            return False
     enc = pw1.encode('utf-8')
     return checkpw(enc, pw2)
 
