@@ -33,6 +33,11 @@
                 <a id="del-confirm" href="{{url_for('UserController.delete_user', uid=user.id)}}" class="hidden glass-btn">
                     <i class="mr-2 text-2xl bi bi-check-lg"></i> Potvrdit smazání?
                 </a>
+                {% if not user.password %}
+                  <a class="glass-btn" href="{{url_for('UserController.grant_admin_perms', uid=user.id)}}"><i class="mr-2 text-2xl bi bi-person-heart"></i>Udělit administrátorská práva</a>
+                {% else %}
+                  <a class="glass-btn" href="{{url_for('UserController.revoke_admin_perms', uid=user.id)}}"><i class="mr-2 text-2xl bi bi-person-fill-slash"></i>Odebrat administrátorská práva</a>
+                {% endif %}
             </div>
             {% endif %}
         </div>
