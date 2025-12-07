@@ -1,15 +1,15 @@
 from http import HTTPStatus
 from peewee import IntegrityError
-from flask import Blueprint, url_for, redirect, session, request, render_template, abort, flash
+from flask import Blueprint, url_for, redirect, session, request, render_template, abort, flash, current_app
 from forms import NewUserForm, EditUserForm
 from flask_login import current_user, login_required
 from db import User, Article
-from logging import info
+from logging import info, error
 from crypto import pw_hash
 from tasks import discord_tasks
 from secrets import token_urlsafe
 
-from extensions import sched
+from extensions import sched, webhook
 
 UserController = Blueprint('UserController', __name__)
 
@@ -91,3 +91,53 @@ def delete_user(uid: int):
     flash(f'Uživatel {name} smazán')
     
     return redirect(url_for('index'))
+
+@UserController.route('/user/<int:uid>/admin/grant')
+@login_required
+def grant_admin_perms(uid: int):
+    user = User.get_or_none(User.id == uid) or abort(HTTPStatus.NOT_FOUND)
+    password = user.password
+    if password is not None:
+        error(f"Granting administrator permissions to an administrator {user.nickname} (ID: {uid})")
+        abort(HTTPStatus.CONFLICT)
+
+    if user.discord == current_app.config['DISCORD_ROLEMASTER_ID']:
+        error("Cannot ")
+
+    temp_password = token_urlsafe(8)
+    user.password = pw_hash(temp_password)
+    user.temp_pw = True
+    user.save()
+
+    session['tpw'] = temp_password
+    session['tmp_uid'] = user.get_id()
+
+    info(f"Administrator permissions granted to {user.nickname} (ID: {uid}) by {current_user.nickname} (ID: {current_user.get_id()})")
+    flash(f'Uživatel {user.nickname} je nyní administrátor')
+    webhook.send_text(f"Uživateli {user.nickname} byla udělena administrátorská práva")
+    
+    return redirect(url_for('UserAuth.temp_pw'))
+
+@UserController.route('/user/<int:uid>/admin/revoke')
+@login_required
+def revoke_admin_perms(uid: int):
+    user = User.get_or_none(User.id == uid) or abort(HTTPStatus.NOT_FOUND)
+    password = user.password
+    if password is None:
+        error(f"Removing administrator permissions from a non-administrator {user.nickname} (ID: {uid})")
+        abort(HTTPStatus.CONFLICT)
+
+    if user.discord == str(current_app.config['DISCORD_ROLEMASTER_ID']):
+        error(f"Attempting to remove administrator permissions from master admin (by {current_user.nickname} ID: {current_user.get_id()})")
+        flash(f"Hlavnímu administrátorovi nelze odebrat práva")
+        abort(HTTPStatus.FORBIDDEN)
+
+    user.temp_pw = 1
+    user.password = None;
+    user.save()
+
+    info(f"Administrator permissions revoked from {user.nickname} (ID: {uid}) by {current_user.nickname} (ID: {current_user.get_id()})")
+    flash(f'Uživatel {user.nickname} už není administrátor')
+    webhook.send_text(f"Uživateli {user.nickname} byla odebrána administrátorská práva")
+    
+    return redirect(url_for('UserController.user', uid=uid))
