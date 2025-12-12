@@ -102,7 +102,8 @@ def grant_admin_perms(uid: int):
         abort(HTTPStatus.CONFLICT)
 
     if user.discord == current_app.config['DISCORD_ROLEMASTER_ID']:
-        error("Cannot ")
+        error("Cannot grant admin permissions to master admin")
+        abort(HTTPStatus.FORBIDDEN)
 
     temp_password = token_urlsafe(8)
     user.password = pw_hash(temp_password)
