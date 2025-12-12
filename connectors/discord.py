@@ -155,6 +155,7 @@ class DiscordWebhook():
             raise RuntimeError('Cannot send an uninitialized webhook (no URL specified)')
         if self.mock:
             debug(f"Mock send webhook with message \"{message}\" with ping for {self.notify or ping_user or "[nobody]"}")
+            return
         if current_app.config['DEBUG'] == True:
             message = f"[TESTOVACÍ REŽIM - PROSÍM IGNORUJTE] {message}"
         if len(message) > 2000:
