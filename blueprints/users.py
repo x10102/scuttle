@@ -81,6 +81,8 @@ def user(uid: int):
     originals = list(user.articles.where(Article.is_original == True).prefetch(User))
     return render_template('user.j2', user=user, stats=user.stats.first(), translations=translations, corrections=corrections, originals=originals, sort=sort)
 
+# TODO: Make this and some other destructive routes POST-only
+# TODO: Maybe just hide users instead of deleting them as to not fuck up DB integrity
 @UserController.route('/user/<int:uid>/delete', methods=["POST", "GET"])
 @login_required
 def delete_user(uid: int):
