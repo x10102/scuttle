@@ -65,6 +65,12 @@ def raise_error():
     error("Error handling test")
     abort(HTTPStatus.INTERNAL_SERVER_ERROR)
 
+@DebugTools.route('/debug/raise_unhandled')
+@login_required
+def raise_unhandled():
+    info('Raising unhandled exception')
+    raise RuntimeError("teehee :3")
+
 @DebugTools.route('/debug/export_pubkey')
 @login_required
 def export_pubkey():

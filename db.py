@@ -1,6 +1,5 @@
 import datetime
 from peewee import *
-from flask_login import UserMixin
 
 database = SqliteDatabase("data/scp.db")
 
@@ -18,7 +17,7 @@ class ViewModel(BaseModel):
         primary_key = False
 
 # type: ignore
-class User(BaseModel, UserMixin):
+class User(BaseModel):
     id = AutoField()
     discord = TextField(null=True)
     display_name = TextField(null=True)
@@ -32,6 +31,14 @@ class User(BaseModel, UserMixin):
     def can_login(self) -> bool:
         return self.password != None
     
+    # Flask-Login stuff
+    is_anonymous = False
+    is_active = True
+    
+    @property
+    def is_authenticated(self) -> bool:
+        return len(self.password) > 0
+
     def to_dict(self) -> dict:
         return {
         'id': self.id,
