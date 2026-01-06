@@ -39,3 +39,8 @@ menu:
         icon: "bi-braces"
         auth: "authorized"
         handler: "DebugTools.debug_index"
+    - pwchange:
+        text: "Změnit heslo"
+        icon: "bi-key"
+        auth: "authorized"
+        handler: "UserAuth.pw_change"
