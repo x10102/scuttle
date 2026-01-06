@@ -4,7 +4,7 @@ from logging import info, error
 # External
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from forms import LoginForm, PasswordChangeForm
-from flask_login import login_user, login_required, logout_user
+from flask_login import login_user, login_required, logout_user, current_user
 
 # Internal
 from crypto import pw_check, pw_hash
@@ -52,7 +52,7 @@ def logout():
 @UserAuth.route('/user/pw_change', methods=["GET", "POST"])
 def pw_change():
 
-    if 'PRE_LOGIN_UID' not in session:
+    if ('PRE_LOGIN_UID' not in session) and not current_user.is_authenticated:
         return redirect(url_for('index'))
 
     if request.method == "GET":
@@ -63,7 +63,11 @@ def pw_change():
     if not form.validate_and_flash():
         return redirect(url_for('UserAuth.pw_change'))
 
-    user = User.get_or_none(User.id == session['PRE_LOGIN_UID'])
+    if not current_user.is_authenticated:
+        user = User.get_or_none(User.id == session['PRE_LOGIN_UID'])
+    else: 
+        user = current_user
+
     if user is None:
         error("Invalid auth state (Temporary PW change in progress but user not found)")
         return redirect(url_for('index'))
@@ -71,9 +75,15 @@ def pw_change():
     user.temp_pw = False
     user.save()
 
-    login_user(user)
-    del session['PRE_LOGIN_UID']
-    info(f"Permanent password created for {user.nickname} (ID: {user.id})")
+    if not current_user.is_authenticated:
+        login_user(user)
+    if 'PRE_LOGIN_UID' in session:
+        del session['PRE_LOGIN_UID']
+    if not current_user.is_authenticated:
+        info(f"Permanent password created for {user.nickname} (ID: {user.id})")
+    else:
+        flash("Heslo změněno")
+        info(f"Password changed for user {user.nickname} (ID: {user.id})")
     return redirect(url_for('index'))
 
 @UserAuth.route('/user/new/pw')
