@@ -1,3 +1,5 @@
+-- This script needs to be kept for future updates as peewee doesn't like dealing with SQLite views, especially not ones this complex
+
 CREATE TABLE IF NOT EXISTS UserType (
     id          INTEGER     NOT NULL PRIMARY KEY,
     name        TEXT        NOT NULL UNIQUE
@@ -45,6 +47,8 @@ CREATE TABLE IF NOT EXISTS Note (
     idauthor    INTEGER     NOT NULL,
     FOREIGN KEY (idauthor) REFERENCES User(id) ON DELETE CASCADE
 );
+
+-- This shit is a masterpiece, will land me a job as a database engineer one day
 
 CREATE VIEW IF NOT EXISTS Frontpage AS
     SELECT User.id AS id, User.nickname AS nickname, User.discord AS discord, User.wikidot AS wikidot, User.display_name as display, 
