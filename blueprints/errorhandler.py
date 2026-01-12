@@ -13,3 +13,11 @@ def e403(error):
 @ErrorHandler.app_errorhandler(500)
 def e500(error):
     return render_template('errors/error.j2', errno=500, errtext="Internal Server Error", errquote="[DATA VYMAZÁNA]", errlink="http://scp-cs.wikidot.com/sandrewswann-s-proposal")
+
+@ErrorHandler.app_errorhandler(403)
+def e500(error):
+    return render_template('errors/error.j2', errno=403, errtext="Forbidden", errquote="Selhání autentizace vyústí v nasazení MTF-Alpha 1 (\"Red Right Hand\"). Přejete si pokračovat?", errlink="http://scp-cs.wikidot.com/tanhony-s-proposal")
+
+@ErrorHandler.app_errorhandler(409)
+def e500(error):
+    return render_template('errors/error.j2', errno=409, errtext="Conflict", errquote="Nepřesnost. @A8D3.", errlink="http://scp-cs.wikidot.com/scp-7579")

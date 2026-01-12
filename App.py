@@ -1,6 +1,6 @@
 # Builtins
 import json
-from logging import info, warning, error
+from logging import info, warning, error, debug, critical
 import logging
 from os import environ as env, makedirs
 
@@ -11,12 +11,15 @@ from flask_login import current_user
 from waitress import serve
 
 # Internal
-from passwords import pw_hash
-from utils import ensure_config, get_user_role, get_role_color
+from crypto import pw_hash
 from connectors.discord import DiscordClient
 from connectors.rss import RSSUpdateType
-from tasks import discord_tasks
+from framework.menu import navigation_menu
+from framework.roles import role_badge
+from utils import ensure_config
+from tasks import discord_tasks, backup_task
 from db import User
+from crypto import generate_signing_keys
 import db
 
 # Blueprints
@@ -30,9 +33,11 @@ from blueprints.stats import StatisticsController
 from blueprints.api import ApiController
 from blueprints.rsspage import RssPageController
 from blueprints.oauth import OauthController
+from blueprints.autobackup import AutobackupController
 from blueprints.embed import EmbedController
 
-from extensions import login_manager, sched, oauth, rss, webhook
+from extensions import login_manager, sched, oauth, rss, webhook, portainer
+from constants import APP_VERSION
 
 app = Flask(__name__)
 
@@ -65,6 +70,7 @@ def fix_proxy() -> None:
     if "FIX_PROXY" in app.config and app.config['FIX_PROXY']:
         from werkzeug.middleware.proxy_fix import ProxyFix
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+        info("Registered ProxyFix middleware")
 
 def user_init() -> None:
     """
@@ -76,7 +82,7 @@ def user_init() -> None:
         return
     if not init_password:
         error(f"Password not specified for {init_user}")
-        exit(-1)
+        exit(1)
     if User.get_or_none(User.nickname == init_user) is not None:
         warning(f"Initial user {init_user} already exists")
         return
@@ -96,6 +102,7 @@ def extensions_init() -> None:
 
     login_manager.session_protection = "basic"
     login_manager.login_view = "UserAuth.login"
+    login_manager.login_message = u"Pro zobrazení této stránky se přihlaste"
     login_manager.user_loader(lambda uid: User.get_by_id(uid))
     login_manager.init_app(app)
 
@@ -124,6 +131,9 @@ def extensions_init() -> None:
     else:
         warning('Discord API token not set. Profiles won\'t be updated!')
 
+    if app.config.get('BACKUP', {}).get('BACKUP_INTERVAL') is not None:
+        sched.add_job('autobackup_run', lambda: backup_task.run_backup_task(app.config['BACKUP']['BACKUP_INTERVAL'], app), trigger='interval', hours=12)
+
     # Checking if we have a webhook URL
     webhook_url = app.config.get('DISCORD_WEBHOOK_URL', None)
     if webhook_url:
@@ -138,6 +148,9 @@ def extensions_init() -> None:
     if rss.has_links:
         sched.add_job('Fetch RSS updates', rss.check, trigger='interval', hours=1)
 
+    # Check if Portainer config is present
+    if 'BACKUP' in app.config and 'PORTAINER' in app.config['BACKUP']:
+        portainer.init_app(app)
 
 # TODO: App factory??
 if __name__ == '__main__':
@@ -146,6 +159,10 @@ if __name__ == '__main__':
     # Load config file or create it if there isn't one
     ensure_config('config.json')
     app.config.from_file('config.json', json.load)
+
+    # Set debug logging level before doing anything else
+    if app.config['DEBUG']:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     # Ensure we have a directory to store the avatar thumbnails
     makedirs('./temp/avatar', exist_ok=True)
@@ -157,10 +174,11 @@ if __name__ == '__main__':
     app.config['webhook'] = webhook
 
     # Add useful template globals
-    app.add_template_global(get_user_role)
-    app.add_template_global(get_role_color)
     app.add_template_global(current_user, 'current_user')
     app.add_template_global(RSSUpdateType)
+    app.add_template_global(navigation_menu)
+    app.add_template_global(role_badge)
+    app.add_template_global(APP_VERSION, 'APP_VERSION')
     
     # Load all the blueprints
     app.register_blueprint(ErrorHandler)
@@ -173,6 +191,7 @@ if __name__ == '__main__':
     app.register_blueprint(ApiController)
     app.register_blueprint(OauthController)
     app.register_blueprint(RssPageController)
+    app.register_blueprint(AutobackupController)
     app.register_blueprint(EmbedController)
 
     # Create the admin user
@@ -181,12 +200,16 @@ if __name__ == '__main__':
     # Initialize the database
     db.database.create_tables(db.models)
 
+    # Generate signing keys
+    if not generate_signing_keys():
+        critical("Error while generating signing keys. Exiting...")
+        exit(1)
+
     # Load extensions and enable integrations based on config
     extensions_init()
 
     # Force oauthlib to allow insecure transport when debugging
     if app.config['DEBUG']:
-        logging.getLogger().setLevel(logging.DEBUG)
         warning('App running in debug mode!')
         env['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
         warning('OAUTHLIB insecure transport is enabled!')
