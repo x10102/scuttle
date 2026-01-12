@@ -33,5 +33,12 @@ Badges are small wikidot embeds designed to be placed in users' personal files o
 
 New themes can be added as templates into the `templates/embeds/{translator,writer}` folder and set using a URL GET parameter when using the embed. After creating a new theme, you must run `scripts/build_badge_css.bat` to add the new Tailwind classes to the stylesheet. (The script is a Windows batch file, but only contains a single command that can be run in a linux shell) 
 
+## Administrators
+You can make a new user an administrator when creating their account, or by pressing the "Grant admin rights" button on their profile. A temporary password will be displayed, which they will use for the first login and will be immediately asked to change. 
+
+**All administrators have equal permissions.** Meaning they can create/edit/delete articles, users and backups. This includes granting or revoking administrator status from other accounts (the only exception being the designated rolemaster, whose admin rights cannot be revoked by themselves or anyone else). Make sure you trust your admin team, as there aren't any mechanisms in place to prevent them from going insane and deleting everything (Looking at you, SCP-EN...).
+
+Regular users aren't allowed to log in. If an unauthorized Discord account attempts to, an error message will be displayed and the event will be logged.
+
 ## Why the hell is this so complicated?
 Modularity or future-proofing wasn't exactly on my mind while I was writing the first versions of SCUTTLE. If you need a hand setting SCUTTLE up for your branch, I'll be glad to help, just shoot me a message on Discord.
