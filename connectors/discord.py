@@ -2,7 +2,8 @@
 import json
 import time
 import typing as t
-from logging import warning, error, info
+from logging import warning, error, info, debug
+from flask import current_app
 from http import HTTPStatus
 
 # External
@@ -16,6 +17,8 @@ RATELIMIT_RETRIES = 3
 
 class DiscordException(Exception):
     pass
+
+# TODO: Store app object and use instead of current_app
 
 class DiscordClient():
 
@@ -44,7 +47,7 @@ class DiscordClient():
         return True
     
     @staticmethod
-    def _get_user(uid: int) -> t.Optional[dict]:
+    def get_user(uid: int) -> t.Optional[dict]:
         
         retry = 0
         while retry < RATELIMIT_RETRIES:
@@ -81,7 +84,7 @@ class DiscordClient():
         """
         
         try:
-            user = DiscordClient._get_user(uid)
+            user = DiscordClient.get_user(uid)
         except DiscordException as e:
             raise e
         if user is None:
@@ -105,7 +108,7 @@ class DiscordClient():
             bytes: A bytes object containing the user's avatar in PNG format
         """
         try:
-            user = DiscordClient._get_user(uid)
+            user = DiscordClient.get_user(uid)
         except DiscordException as e:
             raise e
 
@@ -145,10 +148,16 @@ class DiscordWebhook():
     def init_app(self, app):
         self.url = app.config['DISCORD_WEBHOOK_URL']
         self.notify = app.config['DISCORD_ROLEMASTER_ID']
+        self.mock = app.config.get("DEBUG_DISABLE_WEBHOOKS", False) and app.config.get("DEBUG", False)
 
     def send_text(self, message: str, ping_user: int = 0) -> None:
         if not self.url:
             raise RuntimeError('Cannot send an uninitialized webhook (no URL specified)')
+        if self.mock:
+            debug(f"Mock send webhook with message \"{message}\" with ping for {self.notify or ping_user or '[nobody]'}")
+            return
+        if current_app.config['DEBUG'] == True:
+            message = f"[TESTOVACÍ REŽIM - PROSÍM IGNORUJTE] {message}"
         if len(message) > 2000:
             raise ValueError(f'Message is too long ({len(message)} characters)')
         if ping_user:

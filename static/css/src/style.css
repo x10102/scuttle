@@ -36,7 +36,7 @@ thead {
 }
 
 tr {
-  @apply flex flex-col h-auto w-full px-3 py-2 my-4 items-end shadow-2xl border-gray-500 bg-opacity-5 bg-white !important;
+  @apply flex flex-col h-auto w-full px-3 py-2 my-4 items-end shadow-2xl border-gray-500 !important;
   @apply md:table-row md:h-10 md:p-4 md:border-none md:shadow-none md:bg-transparent !important;
 }
 
@@ -107,6 +107,10 @@ td {
 
   .btn-danger {
     @apply glass-btn border-red-500/40 hover:bg-red-500/40;
+  }
+
+  .result-badge {
+    @apply inline-block ml-2 text-green-600 bg-green-300/5 px-2 rounded-full border-green-300/10 border select-none transition-all;
   }
 }
 
