@@ -36,7 +36,7 @@ New themes can be added as templates into the `templates/embeds/{translator,writ
 ## Administrators
 You can make a new user an administrator when creating their account, or by pressing the "Grant admin rights" button on their profile. A temporary password will be displayed, which they will use for the first login and will be immediately asked to change. 
 
-**All administrators have equal permissions.** Meaning they can create/edit/delete articles, users and backups. This includes granting or revoking administrator status from other accounts (the only exception being the designated rolemaster, whose admin rights cannot be revoked by themselves or anyone else). Make sure you trust your admin team, as there aren't any mechanisms in place to prevent them from going insane and deleting everything (Looking at you, SCP-EN...).
+**All administrators have equal permissions.** Meaning they can create/edit/delete articles, users and backups. This includes granting or revoking administrator status from other accounts (the only exception being the designated rolemaster, whose admin rights cannot be revoked by themselves or anyone else). Make sure you trust your admin team, as there aren't any mechanisms in place to prevent them from going insane and deleting everything.
 
 Regular users aren't allowed to log in. If an unauthorized Discord account attempts to, an error message will be displayed and the event will be logged.
 
