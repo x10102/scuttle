@@ -15,7 +15,7 @@ from db import User, Article
 
 ArticleController = Blueprint('ArticleController', __name__)
 
-def notify_rolemaster(uid, point_amount):
+def check_role_and_notify(uid, point_amount):
     promoted_user = User.get_or_none(User.id == uid)
     if not promoted_user:
         error(f"How the fuck does this even happen? (Sending promote notify for a nonexistent user {uid})")
@@ -25,7 +25,7 @@ def notify_rolemaster(uid, point_amount):
     next_role = get_role(current_points + point_amount)
     if current_role != next_role:
         if promoted_user.discord:
-            webhook.send_text(f'Uživatel {promoted_user.nickname} (<@{promoted_user.discord}>) dosáhl hranice pro roli {next_role}!')
+            webhook.send_text(f'Uživatel {promoted_user.nickname} (<@{promoted_user.discord}>) dosáhl hranice pro roli {next_role['name']}!')
 
 @ArticleController.route('/article/<int:aid>/delete', methods=["POST"])
 @login_required
@@ -61,7 +61,7 @@ def add_article(uid):
         return redirect(url_for('ArticleController.add_article', uid=uid))
     
     if current_app.config['WEBHOOK_ENABLE'] and not is_original:
-        notify_rolemaster(uid, form.words.data / 1000 + form.bonus.data)
+        check_role_and_notify(uid, form.words.data / 1000 + form.bonus.data)
 
     article = Article()
     article.name = title
@@ -96,6 +96,10 @@ def edit_article(aid: int):
     form = EditArticleForm()
     if not form.validate_and_flash():
         return redirect(url_for('UserController.user', uid=article.author.get_id()))
+
+    point_diff = (form.words.data - article.words)/1000 + (form.bonus.data - article.bonus)
+    if point_diff > 0:
+        check_role_and_notify(article.author.id, point_diff)
 
     title = form.title.data.upper() if form.title.data.lower().startswith('scp') else form.title.data
 
