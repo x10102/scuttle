@@ -157,8 +157,9 @@ if __name__ == '__main__':
     init_logger()
 
     # Load config file or create it if there isn't one
-    ensure_config('config.json')
-    app.config.from_file('config.json', json.load)
+    if not ensure_config('config.json') or not app.config.from_file('config.json', json.load):
+        critical("Config file is inaccessible, malformed or could not be created")
+        exit(1)
 
     # Set debug logging level before doing anything else
     if app.config['DEBUG']:
