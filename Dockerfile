@@ -12,4 +12,6 @@ COPY . /app
 
 EXPOSE 8080
 
+HEALTHCHECK --interval=1m --start-period=5s --timeout=10s CMD curl --fail http://localhost:8080 || exit 1
+
 CMD ["python", "App.py"]
