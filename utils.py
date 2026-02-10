@@ -28,3 +28,16 @@ def ensure_config(filename: str) -> bool:
         except Exception as e:
              logging.error("Unable to create config file")
              return False
+        
+def key_exists(config: dict, key: str) -> bool:
+    """
+    Checks whether a key exists in a nested dict
+
+    the key parameter is formatted as "subkey1.subkey2.subkey3"
+    """
+    keys = key.split('.')
+    subkey = config
+    for k in keys:
+        subkey = subkey.get(k)
+        if not subkey: return False
+    return True

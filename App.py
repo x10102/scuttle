@@ -2,7 +2,7 @@
 import json
 from logging import info, warning, error, critical
 import logging
-from os import environ as env, makedirs
+from os import environ as env, makedirs, path, getcwd
 
 # External
 from flask import Flask, render_template, request
@@ -16,7 +16,7 @@ from connectors.discord import DiscordClient
 from connectors.rss import RSSUpdateType
 from framework.menu import navigation_menu
 from framework.roles import role_badge
-from utils import ensure_config
+from utils import ensure_config, key_exists
 from tasks import discord_tasks, backup_task
 from db import User
 from crypto import generate_signing_keys
@@ -100,9 +100,9 @@ def extensions_init() -> None:
     login_manager.init_app(app)
 
     # Checking if we can enable Discord Login
-    appid, appsecret = app.config.get('DISCORD_CLIENT_ID', None), app.config.get('DISCORD_CLIENT_SECRET', None)
-    app.config['OAUTH_ENABLE'] = app.config.get('DISCORD_LOGIN_ENABLE', True)
-    if not appid or not appsecret:
+    if key_exists(app.config, 'DISCORD.CLIENT_ID') and key_exists(app.config, 'DISCORD.CLIENT_SECRET'):
+        app.config['OAUTH_ENABLE'] = app.config['DISCORD'].get('LOGIN_ENABLE')
+    else:
         warning('OAuth App ID or secret not set, Discord login disabled')
         app.config['OAUTH_ENABLE'] = False
 
@@ -116,8 +116,7 @@ def extensions_init() -> None:
         sched.start()
 
     # Checking if we can enable the API connection
-    discord_token = app.config.get('DISCORD_TOKEN', None)
-    if discord_token:
+    if key_exists(app.config, 'DISCORD.TOKEN'):
         DiscordClient.init_app(app)
         sched.add_job('Download avatars', lambda: discord_tasks.download_avatars_task(), trigger='interval', days=3)
         sched.add_job('Fetch nicknames', lambda: discord_tasks.update_nicknames_task(), trigger='interval', days=4)
@@ -128,8 +127,7 @@ def extensions_init() -> None:
         sched.add_job('autobackup_run', lambda: backup_task.run_backup_task(app.config['BACKUP']['BACKUP_INTERVAL'], app), trigger='interval', hours=12)
 
     # Checking if we have a webhook URL
-    webhook_url = app.config.get('DISCORD_WEBHOOK_URL', None)
-    if webhook_url:
+    if key_exists(app.config, 'WEBHOOK.WEBHOOK_URL'):
         webhook.init_app(app)
         app.config['WEBHOOK_ENABLE'] = True
     else:
@@ -142,7 +140,7 @@ def extensions_init() -> None:
         sched.add_job('Fetch RSS updates', rss.check, trigger='interval', hours=1)
 
     # Check if Portainer config is present
-    if 'BACKUP' in app.config and 'PORTAINER' in app.config['BACKUP']:
+    if key_exists(app.config, 'BACKUP.PORTAINER'):
         portainer.init_app(app)
 
 def create_directories(app: Flask) -> None:
@@ -150,15 +148,23 @@ def create_directories(app: Flask) -> None:
     Creates all directories needed for the app
     """
     info("Creating directories")
+
+    current_dir = getcwd()
+
     # Ensure we have a directory to store the avatar thumbnails
-    makedirs('./temp/avatar', exist_ok=True)
+    makedirs(path.join(current_dir, 'temp', 'avatar'), exist_ok=True)
 
     # Ensure we have a directory to store original site snapshots
-    makedirs('./temp/snapshots', exist_ok=True)
+    makedirs(path.join(current_dir, 'temp', 'snapshots'), exist_ok=True)
+
+    # Make snapshot directories for each source wiki
+    if 'MONITORED_WIKIS' in app.config:
+        for wiki in app.config['MONITORED_WIKIS']:
+            makedirs(path.join(current_dir, 'temp', 'snapshots', wiki['source_wiki']), exist_ok=True)
 
     # Create a data directory if it doesn't exist
     # Regular mkdir doesn't have the exist_ok option for whatever reason
-    makedirs('./data', exist_ok=True)
+    makedirs(path.join(current_dir, 'data'), exist_ok=True)
 
 def register_blueprints(app: Flask) -> None:
     # Load all the blueprints
