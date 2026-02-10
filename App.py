@@ -127,7 +127,7 @@ def extensions_init() -> None:
         sched.add_job('autobackup_run', lambda: backup_task.run_backup_task(app.config['BACKUP']['BACKUP_INTERVAL'], app), trigger='interval', hours=12)
 
     # Checking if we have a webhook URL
-    if key_exists(app.config, 'WEBHOOK.WEBHOOK_URL'):
+    if key_exists(app.config, 'WEBHOOK.WEBHOOK_URL') and key_exists(app.config, 'DISCORD_ROLEMASTER_ID'):
         webhook.init_app(app)
         app.config['WEBHOOK_ENABLE'] = True
     else:
@@ -236,7 +236,7 @@ if __name__ == '__main__':
         warning('App running in debug mode!')
         env['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
         warning('OAUTHLIB insecure transport is enabled!')
-        app.run('0.0.0.0', 8080)
+        app.run('0.0.0.0', 8080, debug=True)
     else:
         fix_proxy()
         info("Init complete. Starting WSGI server now.")
