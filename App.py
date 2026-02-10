@@ -168,6 +168,9 @@ if __name__ == '__main__':
     # Ensure we have a directory to store the avatar thumbnails
     makedirs('./temp/avatar', exist_ok=True)
 
+    # Ensure we have a directory to store original site snapshots
+    makedirs('./temp/snapshots', exist_ok=True)
+
     # Create a data directory if it doesn't exist
     # Regular mkdir doesn't have the exist_ok option for whatever reason
     makedirs('./data', exist_ok=True)
