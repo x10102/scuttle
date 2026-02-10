@@ -13,7 +13,7 @@ from urllib.parse import urlparse, urlunparse
 
 # Internal
 from db import User, Article, last_update
-from connectors.wikidotsite import snapshot_original
+import connectors.wikidotsite as wikidotsite
 
 # External
 import requests
@@ -32,8 +32,6 @@ PAGE_RENAME = 'přesunout/přejmenovat stránku' # This text in the title indica
 CORRECTION_COMPLETE = 'Odstraněné štítky: korekce'
 IGNORE_BRANCH_TAG = '-cs' # Ignore new pages that start with this tag, doesn't work for tales but I don't really care
 TIMEZONE_UTC_OFFSET = timedelta(hours=2)
-
-USER_AGENT = "SCUTTLE Crawler (https://scp-wiki.cz, v1)"
 
 class RSSUpdateType(IntEnum):
     RSS_NEWPAGE = 0
@@ -62,13 +60,13 @@ class RSSMonitor:
         self.__source_wiki_map = {}
 
     def init_app(self, app: Flask) -> None:
-        if 'RSS_MONITOR_CHANNELS' not in app.config:
+        if 'MONITORED_WIKIS' not in app.config:
             warning('RSSMonitor has no endpoints!')
             return
-        for wiki in app.config['RSS_MONITOR_CHANNELS']:
-            self.__links.append(wiki['url'])
+        for wiki in app.config['MONITORED_WIKIS']:
+            self.__links.append(wiki['feed_url'])
             if 'source_wiki' in wiki:
-                wiki_url_base = urlparse(wiki['url']).netloc
+                wiki_url_base = urlparse(wiki['feed_url']).netloc
                 self.__source_wiki_map[wiki_url_base] = wiki['source_wiki']
         debug(f"Mapped source wikis: {self.__source_wiki_map}")
         self.__webhook = app.config['webhook']
@@ -129,33 +127,6 @@ class RSSMonitor:
     @staticmethod
     def get_update_revision(update: dict) -> int:
         return update['guid'].split('#')[1].removeprefix("revision-")
-    
-    @staticmethod
-    def source_page_exists(url: str, source_wiki: str) -> bool:
-        """
-        Converts a branch URL into a source URL of the same page and checks if it exists there
-        """
-        try:
-            parsed_url = urlparse(url)
-        except ValueError:
-            error(f'Cannot parse URL "{url}"')
-            return False
-        # TODO: This will break if the source wiki does not support HTTPS
-        parsed_url = parsed_url._replace(scheme='https')._replace(netloc=f"{source_wiki}.wikidot.com")
-        original_url = urlunparse(parsed_url)
-        try:
-            head_result = requests.head(original_url, headers={'User-Agent': USER_AGENT})
-        except requests.RequestException as e:
-            error(f'Request to {original_url} failed ({str(e)})')
-            return False
-        match head_result.status_code:
-            case 200:
-                return True
-            case 404:
-                return False
-            case _:
-                warning(f'Got unusual status code ({head_result.status_code}) for URL {original_url}')
-                return False
 
     def _process_new_page(self, update) -> bool:
         timestamp = RSSMonitor.get_rss_update_timestamp(update)
@@ -165,8 +136,8 @@ class RSSMonitor:
         link = update['link']
         source_wiki = urlparse(link).netloc
 
-        if RSSMonitor.source_page_exists(link, self.__source_wiki_map[source_wiki]):
-            snapshot_original(link, revision_id=revision, source_wiki_name=self.__source_wiki_map[source_wiki])
+        if wikidotsite.source_page_exists(link, self.__source_wiki_map[source_wiki]):
+            wikidotsite.snapshot_original(link, revision_id=revision, source_wiki_name=self.__source_wiki_map[source_wiki])
 
         if not author:
             info(f'Ignoring {title} in RSS feed (couldn\'t match wikidot username {author} to a user)')
