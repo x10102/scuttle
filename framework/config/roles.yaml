@@ -33,5 +33,30 @@ translator:
       name: "Překladatel VII"
       point_limit: 500
       badge_css: "gradient-background"
-
-
+writer:
+  min_points: 1
+  no_role: 
+    name: "Žádná"
+    point_limit: 0
+    badge_css: ""
+  roles:
+    - writer1:
+      name: "Spisovatel I"
+      point_limit: 1
+      badge_css: "bg-gradient-to-r from-yellow-100 to-red-400"
+    - writer2:
+      name: "Spisovatel II"
+      point_limit: 3
+      badge_css: "bg-gradient-to-r from-orange-600 to-emerald-400"
+    - writer3:
+      name: "Spisovatel III"
+      point_limit: 10
+      badge_css: "bg-gradient-to-r from-amber-500 to-pink-500"
+    - writer4:
+      name: "Spisovatel IV"
+      point_limit: 25
+      badge_css: "bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"
+    - writer5:
+      name: "Spisovatel V"
+      point_limit: 40
+      badge_css: "bg-gradient-to-r from-gray-700 via-gray-900 to-black"

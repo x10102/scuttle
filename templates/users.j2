@@ -43,7 +43,7 @@
             <td data-label="Počet překladů">{{ entry.translation_count }}</td>
             <td data-label="Počet korekcí">{{ entry.correction_count }}</td>
             <td data-label="Počet bodů">{{ "%.1f" % entry.points }}</td>
-            <td data-label="Role" class="rounded-r-md pr-3">{{role_badge(entry.points)}}</td>
+            <td data-label="Role" class="rounded-r-md pr-3">{{role_badge(entry.points, RoleType.TRANSLATOR, classes='float-left px-2')}} {{role_badge(entry.original_count, RoleType.WRITER, classes='float-right px-4')}}</td>
         </tr>
         {% endfor %}
     </tbody>

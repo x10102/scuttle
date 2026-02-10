@@ -15,7 +15,7 @@ from crypto import pw_hash
 from connectors.discord import DiscordClient
 from connectors.rss import RSSUpdateType
 from framework.menu import navigation_menu
-from framework.roles import role_badge
+from framework.roles import role_badge, get_all_badges, RoleType
 from utils import ensure_config
 from tasks import discord_tasks, backup_task
 from db import User
@@ -181,8 +181,10 @@ if __name__ == '__main__':
     # Add useful template globals
     app.add_template_global(current_user, 'current_user')
     app.add_template_global(RSSUpdateType)
+    app.add_template_global(RoleType)
     app.add_template_global(navigation_menu)
     app.add_template_global(role_badge)
+    app.add_template_global(get_all_badges)
     app.add_template_global(APP_VERSION, 'APP_VERSION')
     
     # Load all the blueprints
