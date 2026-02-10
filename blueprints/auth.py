@@ -11,9 +11,9 @@ from crypto import pw_check, pw_hash
 from db import User
 
 # TODO: Move templates
-UserAuth = Blueprint('UserAuth', __name__)
+AuthController = Blueprint('AuthController', __name__)
 
-@UserAuth.route('/login', methods=["GET", "POST"])
+@AuthController.route('/login', methods=["GET", "POST"])
 def login():
 
     if request.method == "GET":
@@ -25,35 +25,35 @@ def login():
 
     form = LoginForm()
     if not form.validate_and_flash():
-        return redirect(url_for('UserAuth.login'))
+        return redirect(url_for('AuthController.login'))
 
     user = User.get_or_none(User.nickname == form.username.data)
     if user is None or not pw_check(form.password.data, user.password):
         flash('Nesprávné uživatelské jméno nebo heslo')
-        return redirect(url_for('UserAuth.login'))
+        return redirect(url_for('AuthController.login'))
 
     if user.temp_pw:
         session['PRE_LOGIN_UID'] = user.id
-        return redirect(url_for('UserAuth.pw_change'))
+        return redirect(url_for('AuthController.pw_change'))
     login_user(user)
     referrer = session.get('login_next', None)
 
     del session['login_next']
-    return redirect(referrer or url_for('index'))
+    return redirect(referrer or url_for('LeaderboardController.index'))
 
 
-@UserAuth.route('/user/logout')
+@AuthController.route('/user/logout')
 @login_required
 def logout():
     logout_user()
     flash('Uživatel odhlášen')
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('LeaderboardController.index'))
 
-@UserAuth.route('/user/pw_change', methods=["GET", "POST"])
+@AuthController.route('/user/pw_change', methods=["GET", "POST"])
 def pw_change():
 
     if ('PRE_LOGIN_UID' not in session) and not current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('LeaderboardController.index'))
 
     if request.method == "GET":
         return render_template('auth/pw_change.j2', form=PasswordChangeForm())
@@ -61,7 +61,7 @@ def pw_change():
     form = PasswordChangeForm()
 
     if not form.validate_and_flash():
-        return redirect(url_for('UserAuth.pw_change'))
+        return redirect(url_for('AuthController.pw_change'))
 
     if not current_user.is_authenticated:
         user = User.get_or_none(User.id == session['PRE_LOGIN_UID'])
@@ -70,7 +70,7 @@ def pw_change():
 
     if user is None:
         error("Invalid auth state (Temporary PW change in progress but user not found)")
-        return redirect(url_for('index'))
+        return redirect(url_for('LeaderboardController.index'))
     user.password = pw_hash(form.pw.data)
     user.temp_pw = False
     user.save()
@@ -84,18 +84,18 @@ def pw_change():
     else:
         flash("Heslo změněno")
         info(f"Password changed for user {user.nickname} (ID: {user.id})")
-    return redirect(url_for('index'))
+    return redirect(url_for('LeaderboardController.index'))
 
-@UserAuth.route('/user/new/pw')
+@AuthController.route('/user/new/pw')
 def temp_pw():
 
     if 'tpw' not in session:
-        return redirect(url_for('UserAuth.login'))
+        return redirect(url_for('AuthController.login'))
 
     user = User.get_or_none(User.id == session['tmp_uid'])
     if user is None:
         error("Invalid auth state (Created administrator with invalid ID)")
-        return redirect(url_for('index'))
+        return redirect(url_for('LeaderboardController.index'))
 
     tpw = session['tpw']
     del session['tpw']

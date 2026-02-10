@@ -1,6 +1,6 @@
 # Builtins
 import json
-from logging import info, warning, error, debug, critical
+from logging import info, warning, error, critical
 import logging
 from os import environ as env, makedirs
 
@@ -21,12 +21,13 @@ from tasks import discord_tasks, backup_task
 from db import User
 from crypto import generate_signing_keys
 import db
+from constants import APP_VERSION
 
 # Blueprints
-from blueprints.auth import UserAuth
-from blueprints.debug import DebugTools
-from blueprints.content import UserContent
-from blueprints.errorhandler import ErrorHandler
+from blueprints.auth import AuthController
+from blueprints.debug import DebugToolsController
+from blueprints.content import ContentController
+from blueprints.errorhandler import ErrorPageController
 from blueprints.users import UserController
 from blueprints.articles import ArticleController
 from blueprints.stats import StatisticsController
@@ -35,26 +36,18 @@ from blueprints.rsspage import RssPageController
 from blueprints.oauth import OauthController
 from blueprints.autobackup import AutobackupController
 from blueprints.embed import EmbedController
+from blueprints.leaderboard import LeaderboardController
 
 from extensions import login_manager, sched, oauth, rss, webhook, portainer
-from constants import APP_VERSION
 
 app = Flask(__name__)
 
 LOGGER_FORMAT_STR = '[%(asctime)s][%(module)s] %(levelname)s: %(message)s'
 
-@app.route('/')
-def index():
-    sort = request.args.get('sort', type=str, default='points')
-    page = request.args.get('p', type=int, default=0)
-    user_count = User.select().count()
-    return render_template('users.j2', users=db.get_frontpage(sort, page), lastupdate=db.last_update().strftime("%Y-%m-%d %H:%M:%S"), user_count=user_count, sort=sort)
-
 def init_logger() -> None:
     """
     Sets up logging
     """
-    
     logging.getLogger().handlers.clear()
     logging.basicConfig(filename='translatordb.log', filemode='a', format=LOGGER_FORMAT_STR, encoding='utf-8')
     logging.getLogger().setLevel(logging.INFO)
@@ -101,7 +94,7 @@ def extensions_init() -> None:
     """
 
     login_manager.session_protection = "basic"
-    login_manager.login_view = "UserAuth.login"
+    login_manager.login_view = "AuthController.login"
     login_manager.login_message = u"Pro zobrazení této stránky se přihlaste"
     login_manager.user_loader(lambda uid: User.get_by_id(uid))
     login_manager.init_app(app)
@@ -152,19 +145,11 @@ def extensions_init() -> None:
     if 'BACKUP' in app.config and 'PORTAINER' in app.config['BACKUP']:
         portainer.init_app(app)
 
-# TODO: App factory??
-if __name__ == '__main__':
-    init_logger()
-
-    # Load config file or create it if there isn't one
-    if not ensure_config('config.json') or not app.config.from_file('config.json', json.load):
-        critical("Config file is inaccessible, malformed or could not be created")
-        exit(1)
-
-    # Set debug logging level before doing anything else
-    if app.config['DEBUG']:
-        logging.getLogger().setLevel(logging.DEBUG)
-
+def create_directories(app: Flask) -> None:
+    """
+    Creates all directories needed for the app
+    """
+    info("Creating directories")
     # Ensure we have a directory to store the avatar thumbnails
     makedirs('./temp/avatar', exist_ok=True)
 
@@ -175,7 +160,41 @@ if __name__ == '__main__':
     # Regular mkdir doesn't have the exist_ok option for whatever reason
     makedirs('./data', exist_ok=True)
 
+def register_blueprints(app: Flask) -> None:
+    # Load all the blueprints
+    app.register_blueprint(LeaderboardController)
+    app.register_blueprint(ErrorPageController)
+    app.register_blueprint(ContentController)
+    app.register_blueprint(AuthController)
+    app.register_blueprint(DebugToolsController)
+    app.register_blueprint(UserController)
+    app.register_blueprint(ArticleController)
+    app.register_blueprint(StatisticsController)
+    app.register_blueprint(ApiController)
+    app.register_blueprint(OauthController)
+    app.register_blueprint(RssPageController)
+    app.register_blueprint(AutobackupController)
+    app.register_blueprint(EmbedController)
+
+# TODO: App factory??
+if __name__ == '__main__':
+    init_logger()
+
+    # Set debug logging level before doing anything else
+    if app.config['DEBUG']:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    info(f"SCUTTLE v{APP_VERSION} starting up")
+
+    # Load config file or create it if there isn't one
+    if not ensure_config('config.json') or not app.config.from_file('config.json', json.load):
+        critical("Config file is inaccessible, malformed or could not be created")
+        exit(1)
+
+    create_directories(app)
+
     # Store all the singleton classes in config to access them from blueprints
+    # TODO: There has to be a better way to do this
     app.config['scheduler'] = sched
     app.config['oauth'] = oauth
     app.config['rss'] = rss
@@ -187,20 +206,8 @@ if __name__ == '__main__':
     app.add_template_global(navigation_menu)
     app.add_template_global(role_badge)
     app.add_template_global(APP_VERSION, 'APP_VERSION')
-    
-    # Load all the blueprints
-    app.register_blueprint(ErrorHandler)
-    app.register_blueprint(UserContent)
-    app.register_blueprint(UserAuth)
-    app.register_blueprint(DebugTools)
-    app.register_blueprint(UserController)
-    app.register_blueprint(ArticleController)
-    app.register_blueprint(StatisticsController)
-    app.register_blueprint(ApiController)
-    app.register_blueprint(OauthController)
-    app.register_blueprint(RssPageController)
-    app.register_blueprint(AutobackupController)
-    app.register_blueprint(EmbedController)
+
+    register_blueprints(app)
 
     # Initialize the database
     db.database.connect()
