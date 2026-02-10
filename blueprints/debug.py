@@ -6,6 +6,7 @@ from db import Backup
 from datetime import datetime
 import os
 
+from connectors.wikidotsite import snapshot_all
 from extensions import sched, webhook
 
 DebugToolsController = Blueprint('DebugToolsController', __name__)
@@ -87,4 +88,10 @@ def raise_critical_error():
 def force_end_backup():
     Backup.update(is_finished=True).execute()
     flash("Záloha ukončena")
+    return redirect(request.referrer or url_for('LeaderboardController.index'))
+
+@DebugToolsController.route('/debug/backup/snapshot_all')
+def make_all_snapshots():
+    snapshot_all()
+    flash("Snímky vytvořeny")
     return redirect(request.referrer or url_for('LeaderboardController.index'))

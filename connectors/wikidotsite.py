@@ -45,6 +45,11 @@ def get_site_slug(url: str) -> str:
     return path.removeprefix('/')
 
 def snapshot_original(url: str, source_wiki_name: str = "scp-wiki", revision_id: int = 0) -> Optional[PathLike]:
+    """
+    Downloads a copy of a page's original on the source wiki, saves it to the temp directory and returns the path
+
+    revision_id is optional and only used for file name
+    """
     wd_client = wikidot.Client()
     page_name = get_site_slug(url)
     info(f"Saving snapshot of \"{page_name}\", revision ID is {revision_id}")
@@ -54,10 +59,11 @@ def snapshot_original(url: str, source_wiki_name: str = "scp-wiki", revision_id:
         return None
     page_source = original_page.source
     filename = page_name + '-' + str(revision_id) + '.txt'
-    file_path = path.join(getcwd(), 'temp', 'snapshots', filename)
+    file_path = path.join(getcwd(), 'temp', 'snapshots', source_wiki_name, filename)
     with open(file_path, 'w', encoding='utf-8') as file:
         file.write(page_source.wiki_text)
     info(f"Snapshot of \"{page_name}\" saved as {file_path}")
+    return file_path
 
 def map_target_wiki_to_source() -> dict[str, str]:
     """
@@ -76,5 +82,10 @@ def snapshot_all():
     for tr in translations:
         target_wiki_name = parse.urlparse(tr.link).netloc.split('.')[0]
         source_wiki_name = wiki_map[target_wiki_name]
+        # We check whether the page exists to not spam wikidot with unnecessary requests
+        # source_page_exists only sends a single HEAD request
         if not source_page_exists(tr.link, source_wiki_name): continue
+        info(f"Making snapshot of \"{Article.name}\"")
+        path = snapshot_original(Article.link, source_wiki_name)
+        info(f"Snapshot saved as {path}")
 
