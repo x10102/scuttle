@@ -5,7 +5,7 @@ import logging
 from os import environ as env, makedirs, path, getcwd
 
 # External
-from flask import Flask, render_template, request
+from flask import Flask
 from werkzeug.serving import is_running_from_reloader
 from flask_login import current_user
 from waitress import serve
