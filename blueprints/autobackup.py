@@ -177,6 +177,8 @@ def backup_download_sig(backup_id: int):
     return send_file(signature_path, as_attachment=True, download_name=download_name)
 
 # TODO: This doesn't require auth for now as logging wikicomma in would be a pain in the ass
+# Theoretical worst case: someone could force trigger the post-backup process while Wikicomma is still running
+# This would mess up the app state but the files themselves would be intact
 @AutobackupController.route('/backup/status', methods=["GET", "POST"])
 def backup_status():
     if request.method == "GET":
