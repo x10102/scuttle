@@ -82,7 +82,6 @@ def map_target_wiki_to_source() -> dict[str, str]:
 def snapshot_all():
     translations = Article.select(Article.link, Article.name).where(Article.is_original == False).execute()
     wiki_map = map_target_wiki_to_source()
-    to_snapshot = []
     client = wikidot.Client()
     for tr in translations:
         target_wiki_name = parse.urlparse(tr.link).netloc.split('.')[0]
@@ -101,6 +100,6 @@ def snapshot_all():
         #    info(f"Skipping {name} (source page not found)")
         #    continue
         info(f"Making snapshot of \"{name}\"")
-        file_path = snapshot_original(link, source_wiki_name, client=client)
+        file_path = snapshot_original(link, source_wiki_name, client=client, fail_on_not_found=False)
         info(f"Snapshot saved as {file_path}")
 
