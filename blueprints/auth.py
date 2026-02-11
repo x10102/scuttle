@@ -1,5 +1,6 @@
 # Builtins
 from logging import info, error
+from os import getcwd, path
 
 # External
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
@@ -10,8 +11,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 from crypto import pw_check, pw_hash
 from db import User
 
-# TODO: Move templates
-AuthController = Blueprint('AuthController', __name__)
+AuthController = Blueprint('AuthController', __name__, template_folder=path.join(getcwd(), 'templates', 'auth'))
 
 @AuthController.route('/login', methods=["GET", "POST"])
 def login():
@@ -21,7 +21,7 @@ def login():
         # if the first login attempt fails
         if request.referrer and not request.referrer.endswith('/login'):
             session['login_next'] = request.referrer
-        return render_template('auth/login.j2', form=LoginForm())
+        return render_template('login.j2', form=LoginForm())
 
     form = LoginForm()
     if not form.validate_and_flash():
@@ -56,7 +56,7 @@ def pw_change():
         return redirect(url_for('LeaderboardController.index'))
 
     if request.method == "GET":
-        return render_template('auth/pw_change.j2', form=PasswordChangeForm())
+        return render_template('pw_change.j2', form=PasswordChangeForm())
     
     form = PasswordChangeForm()
 
@@ -100,4 +100,4 @@ def temp_pw():
     tpw = session['tpw']
     del session['tpw']
     del session['tmp_uid']
-    return render_template('auth/temp_pw.j2', user=user, tpw=tpw)
+    return render_template('temp_pw.j2', user=user, tpw=tpw)
