@@ -7,7 +7,8 @@ from datetime import datetime
 import os
 
 from connectors.wikidotsite import snapshot_all
-from extensions import sched, webhook
+from connectors.portainer import PortainerError
+from extensions import sched, webhook, portainer
 
 DebugToolsController = Blueprint('DebugToolsController', __name__)
 
@@ -59,6 +60,16 @@ def export_database():
     download_name=datetime.strftime(datetime.now(), 'scp_%d_%m_%Y.db')
     flash("Databáze exportována!")
     return send_from_directory(os.path.join(os.getcwd(), 'data'), 'scp.db', as_attachment=True, download_name=download_name)
+
+@DebugToolsController.route('/debug/backup/test_portainer')
+@login_required
+def test_portainer_login():
+    try:
+        portainer.login()
+        flash("Přihlášení úspěšné!")
+    except PortainerError as e:
+        flash(f"Přihlášení neúspěšné! ({str(e)})")
+    return redirect(request.referrer or url_for("DebugToolsController.debug_index"))
 
 @DebugToolsController.route('/debug/raise_error')
 @login_required

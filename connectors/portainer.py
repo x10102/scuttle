@@ -97,6 +97,9 @@ class PortainerConnector():
         Logs in to portainer and saves the access token. If no credentials are specified, those loaded from config are used.
         """
 
+        if not self.__initialized:
+            raise PortainerError("Not initialized")
+
         username = self.__user or user
         password = self.__password or password
 
