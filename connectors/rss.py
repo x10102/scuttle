@@ -14,6 +14,7 @@ from urllib.parse import urlparse, urlunparse
 # Internal
 from db import User, Article, last_update
 import connectors.wikidotsite as wikidotsite
+from utils import config_has_key
 
 # External
 import requests
@@ -58,17 +59,20 @@ class RSSMonitor:
         self.__finished_guids = deque(maxlen=255)
         # Maps domains to the names of wikis translated from
         self.__source_wiki_map = {}
+        self.__save_snapshots = False
 
     def init_app(self, app: Flask) -> None:
         if 'MONITORED_WIKIS' not in app.config:
             warning('RSSMonitor has no endpoints!')
             return
+        self.__save_snapshots = config_has_key(app.config, "BACKUP.save_snapshots", check_true=True)
         for wiki in app.config['MONITORED_WIKIS']:
             self.__links.append(wiki['feed_url'])
-            if 'source_wiki' in wiki:
+            if self.__save_snapshots and 'source_wiki' in wiki:
                 wiki_url_base = urlparse(wiki['feed_url']).netloc
                 self.__source_wiki_map[wiki_url_base] = wiki['source_wiki']
-        debug(f"Mapped source wikis: {self.__source_wiki_map}")
+        if self.__save_snapshots:
+            debug(f"Mapped source wikis: {self.__source_wiki_map}")
         self.__webhook = app.config['webhook']
 
         info(f'Loaded {len(self.__links)} RSSMonitor endpoints from config')
@@ -134,10 +138,11 @@ class RSSMonitor:
         author = self.get_rss_update_author(update)
         revision = RSSMonitor.get_update_revision(update)
         link = update['link']
-        source_wiki = urlparse(link).netloc
 
-        if wikidotsite.source_page_exists(link, self.__source_wiki_map[source_wiki]):
-            wikidotsite.snapshot_original(link, revision_id=revision, source_wiki_name=self.__source_wiki_map[source_wiki])
+        if self.__save_snapshots:
+            source_wiki = urlparse(link).netloc
+            if wikidotsite.source_page_exists(link, self.__source_wiki_map[source_wiki]):
+                wikidotsite.snapshot_original(link, revision_id=revision, source_wiki_name=self.__source_wiki_map[source_wiki])
 
         if not author:
             info(f'Ignoring {title} in RSS feed (couldn\'t match wikidot username {author} to a user)')

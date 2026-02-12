@@ -69,7 +69,7 @@ def finish_backup():
             archive.writeall(current_app.config['BACKUP']['BACKUP_COMMON_PATH'], 'backup')
             # Add all snapshots to the backup
             snapshot_path = os.path.join(os.getcwd(), 'temp', 'snapshots')
-            if os.path.isdir(snapshot_path):
+            if utils.config_has_key(current_app.config, "BACKUP.save_snapshots", True) and os.path.isdir(snapshot_path):
                 archive.writeall(snapshot_path, 'snapshots')
                 snapshot_count = utils.count_files_rec(snapshot_path)
         # Hash the archive with SHA-1 and save that for later
@@ -110,7 +110,8 @@ def finish_backup():
         backup_done_message += f"Zaznamenáno {status.total_errors} chyb\n\n"
 
     # Add the current snapshot count
-    backup_done_message += f"Uloženo {snapshot_count} snímků původních stránek\n\n"
+    if utils.config_has_key(current_app.config, "BACKUP.save_snapshots", True):
+        backup_done_message += f"Uloženo {snapshot_count} snímků původních stránek\n\n"
 
     # Add the signing key fingerprint
     if not signed:
