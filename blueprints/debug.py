@@ -71,6 +71,26 @@ def test_portainer_login():
         flash(f"Přihlášení neúspěšné! ({str(e)})")
     return redirect(request.referrer or url_for("DebugToolsController.debug_index"))
 
+@DebugToolsController.route('/debug/backup/kill_container')
+@login_required
+def kill_wikicomma_container():
+    try:
+        portainer.kill_container()
+        flash("Kontejner ukončen (SIGKILL)")
+    except PortainerError as e:
+        flash(f"Kontejner se nepodařilo ukončit! ({str(e)})")
+    return redirect(request.referrer or url_for("DebugToolsController.debug_index"))
+
+@DebugToolsController.route('/debug/backup/start_container')
+@login_required
+def start_wikicomma_container():
+    try:
+        portainer.start_container()
+        flash("Kontejner spuštěn")
+    except PortainerError as e:
+        flash(f"Kontejner se nepodařilo spustit! ({str(e)})")
+    return redirect(request.referrer or url_for("DebugToolsController.debug_index"))
+
 @DebugToolsController.route('/debug/raise_error')
 @login_required
 def raise_error():
